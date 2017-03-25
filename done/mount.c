@@ -30,7 +30,7 @@ int mountv6(const char *filename, struct unix_filesystem *u)
 		}
 		else // correctly mounted
 		{
-			return 0;
+			return sector_read(u->f,SUPERBLOCK_SECTOR,&(u->s)); // read and return the returned value: 0 if success, error otherwise
 		}
 	}
 }
