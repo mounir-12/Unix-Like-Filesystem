@@ -51,7 +51,7 @@ void mountv6_print_superblock(const struct unix_filesystem *u)
 	printf("%-19s : %" PRIu8 "\n", "s_ilock", (u->s).s_ilock);
 	printf("%-19s : %" PRIu8 "\n", "s_fmod", (u->s).s_fmod);
 	printf("%-19s : %" PRIu8 "\n", "s_ronly", (u->s).s_ronly);
-	printf("%-19s : [0] %" PRIu16 "\n", "s_time", (u->s).s_time[0]);
+	printf("%-19s : [%" PRIu16 "] %" PRIu16 "\n", "s_time", (u->s).s_time[0], (u->s).s_time[1]);
 	printf("**********FS SUPERBLOCK END**********\n");
 	fflush(stdout);
 	
