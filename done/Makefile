@@ -1,6 +1,3 @@
-all: sector.o mount.o test-core.o
+all: test-inodes
 
-sector.o: error.h unixv6fs.h
-mount.o: sector.h error.h
-
-test-core.o: error.o
+test-inodes: test-core.o error.o mount.o sector.o
