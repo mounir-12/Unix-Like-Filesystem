@@ -1,7 +1,6 @@
 #include "sector.h"
 #include "error.h"
-
-#define SECTOR_SIZE 512
+#include "unixv6fs.h"
 
 int sector_read(FILE *f, uint32_t sector, void *data)
 {
