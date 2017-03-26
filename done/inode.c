@@ -1,5 +1,6 @@
 #include "inode.h"
 #include "sector.h"
+#include "error.h"
 #include "unixv6fs.h"
 #include <inttypes.h>
 
@@ -11,6 +12,7 @@
  */
 int inode_scan_print(const struct unix_filesystem *u)
 {
+	M_REQUIRE_NON_NULL(u);
     uint16_t sector = (u->s).s_inode_start; // first sector containing an inode
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
