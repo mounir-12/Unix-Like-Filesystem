@@ -11,10 +11,11 @@
  */
 int inode_scan_print(const struct unix_filesystem *u)
 {
-    uint16_t sector = u->s.s_inode_start;
+    uint16_t sector = (u->s).s_inode_start; // first sector containing an inode
+    uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
     /* iteration on the sectors */
-    for(int s = 0; s < u->s.s_isize; ++s) {
+    for(int s = 0; s < size; ++s) {
         struct inode inodes[INODES_PER_SECTOR];
         int error = sector_read(u->f, sector + s, inodes);
 
@@ -28,8 +29,9 @@ int inode_scan_print(const struct unix_filesystem *u)
 
             /* print only if inode is valid */
             if(inodes[i].i_mode & IALLOC) {
-                int currentInode = INODES_PER_SECTOR * (s + 1) * (i + 1);
-                printf("inode %-8d", currentInode);
+                int currentInode = INODES_PER_SECTOR * s + i; // number of the first inode in current sector
+                
+                printf("inode %3d ", currentInode);
 
                 /* check wether inode is a directory or a file */
                 if (inodes[i].i_mode & IFDIR) {
@@ -38,7 +40,7 @@ int inode_scan_print(const struct unix_filesystem *u)
                     printf("(%s) ", SHORT_FIL_NAME);
                 }
 
-                printf("len %\n" PRIu32, inode_getsize(inodes[i]));
+                printf("len %" PRIu32"\n", inode_getsize(&inodes[i])); // call inode_getsize with pointer to current inode
                 fflush(stdout);
             }
         }
