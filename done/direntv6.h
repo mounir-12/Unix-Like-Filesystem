@@ -18,10 +18,9 @@ extern "C" {
 #endif
 
 struct directory_reader {
-    
-    struct filev6 fs; // file (it is in fact a directory) containing the current directory
-    struct direntv6 dirs[DIRENTRIES_PER_SECTOR]; // array content of the current directory children (a child can be a file or a directory)
-    int cur = 
+    /* TODO WEEK 06:
+     * définir cette structure.
+     */
     int unused; // so that it can compile before WEEK 6
 };
 
