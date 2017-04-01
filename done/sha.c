@@ -2,6 +2,8 @@
 #include <string.h>
 #include <openssl/sha.h>
 #include "sha.h"
+#include "filev6.h"
+#include "inode.h"
 
 static void sha_to_string(const unsigned char *SHA, char *sha_string)
 {
@@ -33,7 +35,12 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
         if(inode.i_mode & IFDIR){
 			printf("no SHA for directories.\n");
 		} else {
-			printf("content %d SHA\n", inr);
+			struct filev6 fv6;
+			filev6_open(u, inr, &fv6);
+			
+			unsigned char data[inode_getsize(&inode)];
+			while(filev6_readblock(&fv6, data) != 0){};
+			print_sha_from_content(data, inode_getsize(&inode));
 		}
     }
 }
