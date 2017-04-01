@@ -47,8 +47,14 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 			filev6_open(u, inr, &fv6);
 			
 			uint32_t size = inode_getsize(&inode);
+			uint32_t sectorsSize = size - (size % SECTOR_SIZE);
 			
-			unsigned char data[size];
+			if(size > sectorsSize)
+			{
+				sectorsSize += SECTOR_SIZE;
+			}
+			unsigned char data[sectorsSize];
+			
 			int read = 0;
 			
 			printf("\ninode size %d\n", size);
