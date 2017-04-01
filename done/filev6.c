@@ -31,7 +31,7 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
     M_REQUIRE_NON_NULL(fv6);
     M_REQUIRE_NON_NULL(buf);
 
-    uint32_t size = inode_getsize(&fv6->i_node);
+    uint32_t size = inode_getsize(&(fv6->i_node));
 
     if(fv6->offset >= size) {
         return 0;
@@ -50,10 +50,12 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
             if(error) {
                 return error;
             } else {
-                int remainingOctets = size - fv6-> offset;
-                if(remainingOctets < SECTOR_SIZE) {
-                    fv6->offset += remainingOctets;
-                    return remainingOctets;
+                uint32_t remainingBytes = size - fv6->offset;
+                printf("offset: %u, remaining Bytes: %u\n",fv6->offset,remainingBytes);
+                if(remainingBytes < SECTOR_SIZE) {
+					printf("lastSectorRead\n");
+                    fv6->offset += remainingBytes;
+                    return remainingBytes;
                 } else {
                     fv6->offset += SECTOR_SIZE;
                     return SECTOR_SIZE;
