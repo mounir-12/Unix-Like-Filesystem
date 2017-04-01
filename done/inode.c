@@ -11,7 +11,7 @@ int inode_scan_print(const struct unix_filesystem *u)
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
     /* iteration on the sectors */
-    for(uint16_t s = 0; s < size; ++s) { // s is uint16_t the sector number
+    for(uint32_t s = 0; s < size; ++s) { // s the sector number is uint32_t to get correct value passed to sector_read
         struct inode inodes[INODES_PER_SECTOR];
         int error = sector_read(u->f, sector + s, inodes);
 
@@ -67,3 +67,33 @@ void inode_print(const struct inode *inode)
 	printf("**********FS INODE END**********\n");
 	fflush(stdout);
 }
+
+
+int inode_read(const struct unix_filesystem *u, uint16_t inr, struct inode *inode)
+{
+	M_REQUIRE_NON_NULL(u);
+	M_REQUIRE_NON_NULL(inode);
+
+	uint16_t start = (u->s).s_inode_start;	// first sector containing an inode
+	uint16_t size = (u->s).s_isize; // number of sectors containing inodes
+	
+	uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1 // last valid inode number
+	
+	if( !(inr >=0 && inr<=maxInodeNb)) // if not in the range [0; maxInodeNb]
+	{
+		return ERR_INODE_OUTOF_RANGE; // return approriate error code
+	}
+	
+	struct inode inodes[INODES_PER_SECTOR];
+	u
+	int error = sector_read(u->f, sector + s, inodes);
+
+        /* an error occured while trying to read sector */
+        if(error) {
+            return error;
+        }
+	
+	if(start
+	return 0;
+}
+
