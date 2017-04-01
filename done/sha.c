@@ -24,11 +24,12 @@ void print_sha_from_content(const unsigned char *content, size_t length)
 	{
 		return;
 	}
-    unsigned char codedData[SHA_DIGEST_LENGTH];
-    unsigned char * sha = SHA256(content, length, codedData);
+    unsigned char codedData[SHA256_DIGEST_LENGTH]; // array length is length of SHA256
+    SHA256(content, length, codedData);
 
-    char sha_string[SHA_DIGEST_LENGTH];
-    sha_to_string(sha, sha_string);
+    char sha_string[2 * SHA256_DIGEST_LENGTH]; // array length is length of SHA256 * 2
+    sha_to_string(codedData, sha_string);
+    printf("%s\n", sha_string); // print SHA256
 }
 
 
@@ -53,10 +54,8 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 			do
 			{
 				read = filev6_readblock(&fv6, &(data[fv6.offset]));
-				printf("read %u elements\n", read);
-
+				
 			}while(read > 0);
-			printf("Read all");
 			print_sha_from_content(data, inode_getsize(&inode));
 		}
     }
