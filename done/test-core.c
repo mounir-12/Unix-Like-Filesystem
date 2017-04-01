@@ -16,6 +16,7 @@
 #define USAGE    "test <diskname>"
 
 int test(struct unix_filesystem *u);
+int test_inode_print();
 
 void error(const char* message)
 {
@@ -44,8 +45,12 @@ int main(int argc, char *argv[])
     struct unix_filesystem u = {0};
     int error = mountv6(argv[1], &u);
     if (error == 0) {
+        printf("\nmountv6_print_superblock test: \n\n");
         mountv6_print_superblock(&u);
         error = test(&u);
+        
+        printf("\ninode_print test: \n\n");
+        test_inode_print();
     }
     if (error) {
         puts(ERR_MESSAGES[error - ERR_FIRST]);

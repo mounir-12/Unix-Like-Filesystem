@@ -4,12 +4,6 @@
 #include "unixv6fs.h"
 #include <inttypes.h>
 
-/**
- * @brief read all inodes from disk and print out their content to
- *        stdout according to the assignment
- * @param u the filesystem
- * @return 0 on success; < 0 on error.
- */
 int inode_scan_print(const struct unix_filesystem *u)
 {
 	M_REQUIRE_NON_NULL(u);
@@ -17,7 +11,7 @@ int inode_scan_print(const struct unix_filesystem *u)
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
     /* iteration on the sectors */
-    for(int s = 0; s < size; ++s) {
+    for(uint16_t s = 0; s < size; ++s) { // s is uint16_t the sector number
         struct inode inodes[INODES_PER_SECTOR];
         int error = sector_read(u->f, sector + s, inodes);
 
@@ -31,9 +25,9 @@ int inode_scan_print(const struct unix_filesystem *u)
 
             /* print only if inode is valid */
             if(inodes[i].i_mode & IALLOC) {
-                int currentInode = INODES_PER_SECTOR * s + i; // number of the first inode in current sector
+                uint16_t currentInode = INODES_PER_SECTOR * s + i; // number of the inode in current sector
                 
-                printf("inode %3d ", currentInode);
+                printf("inode %3u ", currentInode);
 
                 /* check wether inode is a directory or a file */
                 if (inodes[i].i_mode & IFDIR) {
@@ -48,4 +42,28 @@ int inode_scan_print(const struct unix_filesystem *u)
         }
     }
     return 0;
+}
+
+void inode_print(const struct inode *inode)
+{
+	printf("**********FS INODE START**********\n");
+	if(inode == NULL)
+	{
+		printf("NULL ptr\n");
+	}
+	else
+	{
+		printf("i_mode: %u\n",inode->i_mode);
+		printf("i_nlink: %u\n",inode->i_nlink);
+		printf("i_uid: %u\n",inode->i_uid);
+		printf("i_gid: %u\n",inode->i_gid);
+		printf("i_size0: %u\n",inode->i_size0);
+		printf("i_size1: %u\n",inode->i_size1);
+		uint32_t size = inode->i_size0;
+		size = size << 16;
+		size += inode->i_size1;
+		printf("size: %u\n",size);
+	}
+	printf("**********FS INODE END**********\n");
+	fflush(stdout);
 }
