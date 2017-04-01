@@ -50,15 +50,15 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 			
 			unsigned char data[size];
 			int read = 0;
-			uint32_t offset = fv6.offset;
-			printf("inode %d\n", inr);
+			
+			printf("\ninode size %d\n", size);
 			do
 			{
-				read = filev6_readblock(&fv6, &data[offset]);
-				offset = fv6.offset;
-				printf("read %u elements\n", offset); 
-			}while( read > 0 && offset < size);
-			
+				read = filev6_readblock(&fv6, &(data[fv6.offset]));
+				printf("read %u elements\n", read);
+
+			}while(read > 0);
+			printf("Read all");
 			print_sha_from_content(data, size);
 		}
     }
