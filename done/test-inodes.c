@@ -5,7 +5,6 @@
 #include "error.h"
 #include "unixv6fs.h"
 
-
 int test(struct unix_filesystem *u)
 {
 	return inode_scan_print(u);

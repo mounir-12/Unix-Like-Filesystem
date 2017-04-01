@@ -29,11 +29,11 @@ void print_sha_from_content(const unsigned char *content, size_t length)
 void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 {
 	if(inode.i_mode & IALLOC) {
-        printf("SHA inode %d ", inr);
+        printf("SHA inode %d: ", inr);
         if(inode.i_mode & IFDIR){
 			printf("no SHA for directories.\n");
 		} else {
-			print_sha_from_content();
+			printf("content %d SHA\n", inr);
 		}
     }
 }

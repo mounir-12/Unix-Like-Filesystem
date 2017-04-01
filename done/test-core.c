@@ -16,9 +16,7 @@
 #define USAGE    "test <diskname>"
 
 int test(struct unix_filesystem *u);
-int test_inode_print();
-int test_inode_read(const struct unix_filesystem *u, uint16_t inr);
-int test_inode_findsector(const struct unix_filesystem *u, uint16_t inr, int32_t file_sec_off);
+
 
 void error(const char* message)
 {
@@ -47,20 +45,8 @@ int main(int argc, char *argv[])
     struct unix_filesystem u = {0};
     int error = mountv6(argv[1], &u);
     if (error == 0) {
-        printf("\nmountv6_print_superblock test: \n\n");
         mountv6_print_superblock(&u);
         error = test(&u);
-        
-        printf("\ninode_print test: \n\n");
-        test_inode_print();
-        
-        uint16_t inr = 5;
-        printf("\ninode_read test on inode %u: \n\n", inr);
-        test_inode_read(&u,inr);
-        
-        int32_t file_sec_off = 8;
-        printf("\ninode_findsector test on inode %u and offset %u: \n\n", inr, file_sec_off);
-        test_inode_findsector(&u,inr, file_sec_off);
     }
     if (error) {
         puts(ERR_MESSAGES[error - ERR_FIRST]);
