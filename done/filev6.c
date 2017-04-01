@@ -38,7 +38,7 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
     } else {
 
         /* sector to read from */
-        int sector = inode_findsector(fv6->u, &fv6->i_node, fv6->offset / SECTOR_SIZE);
+        int sector = inode_findsector(fv6->u, &(fv6->i_node), fv6->offset / SECTOR_SIZE);
 
         /* an error occured while finding the sector */
         if(sector < 0) {
