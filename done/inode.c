@@ -128,7 +128,7 @@ int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int
 
         uint16_t sectors[ADDRESSES_PER_SECTOR];
         int error = sector_read(u->f,sectorOfSectorsNb,sectors);
-        
+
         if(error) { // error occured
             return error;
         } else {
