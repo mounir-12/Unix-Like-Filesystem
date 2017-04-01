@@ -20,6 +20,10 @@ static void sha_to_string(const unsigned char *SHA, char *sha_string)
 
 void print_sha_from_content(const unsigned char *content, size_t length)
 {
+	if(content == NULL)
+	{
+		return;
+	}
     unsigned char codedData[SHA_DIGEST_LENGTH];
     unsigned char * sha = SHA256(content, length, codedData);
 
@@ -30,6 +34,10 @@ void print_sha_from_content(const unsigned char *content, size_t length)
 
 void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 {
+	if(u == NULL)
+	{
+		return;
+	}
 	if(inode.i_mode & IALLOC) {
         printf("SHA inode %d: ", inr);
         if(inode.i_mode & IFDIR){
@@ -39,7 +47,15 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 			filev6_open(u, inr, &fv6);
 			
 			unsigned char data[inode_getsize(&inode)];
-			while(filev6_readblock(&fv6, data) != 0){};
+			int read = 0;
+			uint32_t offset = fv6.offset;
+			
+			do
+			{
+				read = filev6_readblock(&fv6, &data[offset]);
+				offset = fv6.offset;
+			}while( read > 0);
+			
 			print_sha_from_content(data, inode_getsize(&inode));
 		}
     }
