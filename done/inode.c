@@ -59,10 +59,7 @@ void inode_print(const struct inode *inode)
 		printf("i_gid: %u\n",inode->i_gid);
 		printf("i_size0: %u\n",inode->i_size0);
 		printf("i_size1: %u\n",inode->i_size1);
-		uint32_t size = inode->i_size0;
-		size = size << 16;
-		size += inode->i_size1;
-		printf("size: %u\n",size);
+		printf("size: %u\n",inode_getsize(inode));
 	}
 	printf("**********FS INODE END**********\n");
 	fflush(stdout);
@@ -105,5 +102,57 @@ int inode_read(const struct unix_filesystem *u, uint16_t inr, struct inode *inod
 	// no error
 	*inode = inodes[i]; // copy inode content to memory location pointed by inode pointer
 	return 0;
+}
+
+// returns the number of the (file_sec_off)th sector containing file content 
+//so if file_sec_off = 4, return number of 4nd sector if 4th sector contains data
+int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int32_t file_sec_off)
+{
+	M_REQUIRE_NON_NULL(u);
+	M_REQUIRE_NON_NULL(i);
+	
+	if(!(i->i_mode & IALLOC)) // IALLOC flag is 0
+    {
+		return ERR_UNALLOCATED_INODE; // return approriate error code
+	}
+	
+	
+	uint32_t size = inode_getsize(i); // file size
+	uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
+	uint32_t largeFileMaxSize = (1 << 10) * 896; // small file is 896 * 2^10 bytes = 896 Kbytes
+
+	if(size <= smallFileMaxSize) // small file
+	{
+		if(file_sec_off * SECTOR_SIZE >= size) // invalid offset
+		{
+			return ERR_OFFSET_OUT_OF_RANGE; // return approriate error code
+		}
+		return i->i_addr[file_sec_off];
+	}
+	else if(size <= largeFileMaxSize) // large file
+	{
+		if(file_sec_off * SECTOR_SIZE >= size) // invalid offset
+		{
+			return ERR_OFFSET_OUT_OF_RANGE; // return approriate error code
+		}
+		
+		uint16_t sectorOfSectorsNb = i->i_addr[file_sec_off / ADDRESSES_PER_SECTOR]; // number of the sector containing the indirect sectors numbers
+		
+		uint16_t sectors[ADDRESSES_PER_SECTOR];
+		int error = sector_read(u->f,sectorOfSectorsNb,sectors);
+		if(error) // error occured
+		{
+			return error;
+		}
+		else
+		{
+			return sectors[file_sec_off % ADDRESSES_PER_SECTOR]; // return the sector number
+		}
+		
+	}
+	else // extra large file
+	{
+		return ERR_FILE_TOO_LARGE;
+	}
 }
 

@@ -41,3 +41,26 @@ int test_inode_read(const struct unix_filesystem *u, uint16_t inr)
 		return 0;
 	}
 }
+
+int test_inode_findsector(const struct unix_filesystem *u, uint16_t inr, int32_t file_sec_off)
+{
+	struct inode n;
+	int error = inode_read(u, inr, &n);
+	if(error)
+	{
+		debug_print("%s\n", ERR_MESSAGES[error - ERR_FIRST]);
+		return error;
+	}
+	else
+	{
+		int sectorNb = inode_findsector(u,&n,file_sec_off);
+		if(sectorNb < 0)
+		{
+			debug_print("%s\n", ERR_MESSAGES[sectorNb - ERR_FIRST]);
+			return error;
+		}
+		printf("sector number: %d\n", sectorNb);
+		return 0;
+	}
+	
+}
