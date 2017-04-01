@@ -77,23 +77,33 @@ int inode_read(const struct unix_filesystem *u, uint16_t inr, struct inode *inod
 	uint16_t start = (u->s).s_inode_start;	// first sector containing an inode
 	uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 	
-	uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1 // last valid inode number
+	uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1; // last valid inode number
 	
 	if( !(inr >=0 && inr<=maxInodeNb)) // if not in the range [0; maxInodeNb]
 	{
 		return ERR_INODE_OUTOF_RANGE; // return approriate error code
 	}
 	
+	// read sector
 	struct inode inodes[INODES_PER_SECTOR];
-	u
-	int error = sector_read(u->f, sector + s, inodes);
-
-        /* an error occured while trying to read sector */
-        if(error) {
-            return error;
-        }
+	uint32_t sectorNb = (inr - (inr % INODES_PER_SECTOR)) / INODES_PER_SECTOR; // sector number for inode inr
 	
-	if(start
+	int error = sector_read(u->f, start + sectorNb, inodes);
+	/* an error occured while trying to read sector */
+	if(error)
+	{
+		return error; // return approriate error code
+	}
+	
+    int i = inr % INODES_PER_SECTOR; // index of inode inr in inodes array
+    
+    if(!(inodes[i].i_mode & IALLOC)) // IALLOC flag is 0
+    {
+		return ERR_UNALLOCATED_INODE; // return approriate error code
+	}
+	
+	// no error
+	*inode = inodes[i]; // copy inode content to memory location pointed by inode pointer
 	return 0;
 }
 

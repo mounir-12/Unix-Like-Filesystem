@@ -1,7 +1,10 @@
+#define DEBUG 1
+
 #include "mount.h"
 #include "inode.h"
 #include "error.h"
 #include "unixv6fs.h"
+
 
 int test(struct unix_filesystem *u)
 {
@@ -21,4 +24,20 @@ int test_inode_print()
 	printf("\n");
 	inode_print(NULL);
 	return 0;
+}
+
+int test_inode_read(const struct unix_filesystem *u, uint16_t inr)
+{
+	struct inode n;
+	int error = inode_read(u, inr, &n);
+	if(error)
+	{
+		debug_print("%s\n", ERR_MESSAGES[error - ERR_FIRST]);
+		return error;
+	}
+	else
+	{
+		inode_print(&n);
+		return 0;
+	}
 }

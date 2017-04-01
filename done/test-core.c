@@ -17,6 +17,7 @@
 
 int test(struct unix_filesystem *u);
 int test_inode_print();
+int test_inode_read(const struct unix_filesystem *u, uint16_t inr);
 
 void error(const char* message)
 {
@@ -51,6 +52,10 @@ int main(int argc, char *argv[])
         
         printf("\ninode_print test: \n\n");
         test_inode_print();
+        
+        uint16_t inr = 5;
+        printf("\ninode_read test on inode %u: \n\n", inr);
+        test_inode_read(&u,inr);
     }
     if (error) {
         puts(ERR_MESSAGES[error - ERR_FIRST]);
