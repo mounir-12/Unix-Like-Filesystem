@@ -59,7 +59,7 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
             else
             {
 
-                uint32_t remainingBytes = size - (fv6->offset);
+                uint32_t remainingBytes = size - fv6->offset;
                 printf("\noffset: %u, remaining: %u\n",fv6->offset, remainingBytes);
                 if(remainingBytes < SECTOR_SIZE) 
                 {
@@ -68,7 +68,7 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
                 }
                 else
                 {
-                    fv6->offset =  fv6->offset + SECTOR_SIZE;
+                    fv6->offset += SECTOR_SIZE;
                     return SECTOR_SIZE;
                 }
             }
