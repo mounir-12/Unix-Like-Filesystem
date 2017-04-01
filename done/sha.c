@@ -18,10 +18,22 @@ static void sha_to_string(const unsigned char *SHA, char *sha_string)
 
 void print_sha_from_content(const unsigned char *content, size_t length)
 {
+    unsigned char codedData[SHA_DIGEST_LENGTH];
+    unsigned char * sha = SHA256(content, length, codedData);
 
+    char sha_string[SHA_DIGEST_LENGTH];
+    sha_to_string(sha, sha_string);
 }
 
 
 void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 {
+	if(inode.i_mode & IALLOC) {
+        printf("SHA inode %d ", inr);
+        if(inode.i_mode & IFDIR){
+			printf("no SHA for directories.\n");
+		} else {
+			print_sha_from_content();
+		}
+    }
 }
