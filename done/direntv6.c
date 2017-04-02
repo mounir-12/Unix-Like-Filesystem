@@ -31,7 +31,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
 	 }
 	 else
 	 {
-		 memset(d->dirs, 0, DIRENTRIES_PER_SECTOR * sizeof(d->dirs[0])); // default value for directory's children (inode number = 0 (not used))
+		 memset(d->dirs, 0, DIRENTRIES_PER_SECTOR * sizeof(struct direntv6)); // default value for directory's children (inode number = 0 (not used))
 		 
 		 d-> cur = 0; // default value
 		 d->last = 0; // default value
