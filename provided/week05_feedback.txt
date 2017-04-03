@@ -1,0 +1,19 @@
+Submission accepted
+
+stdout: make: Nothing to be done for 'all'.
+making (our) test-inodes: done.
+making (our) test-file: done.
+=====
+testing our test-inodes on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-inodes on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk aiw.uv6: done.
+diff from reference:
+
+stderr: 
