@@ -8,9 +8,8 @@ void direntv6_opendir_test(const struct unix_filesystem *u, uint16_t inr, struct
 
 int test(struct unix_filesystem *u)
 {
-	struct directory_reader d;
-	uint16_t inr = 1;
-	direntv6_opendir_test(u, inr, &d);
+	direntv6_print_tree(u, ROOT_INUMBER, ROOTDIR_NAME);
+	return 0;
 }
 
 void direntv6_opendir_test(const struct unix_filesystem *u, uint16_t inr, struct directory_reader *d)
