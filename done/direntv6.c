@@ -42,9 +42,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
         // read directory content
         do {
             read = filev6_readblock(&(d->fv6), &(data[(d->fv6).offset]));
-            if(read < 0) { // error occured
-                return read;
-            }
+            
         } while(read > 0);
 
         if(read < 0) { // error occured when reading directory content
@@ -102,10 +100,11 @@ int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr
         }
         
         /* update last child read */
-        d->last += SECTOR_SIZE;
+        d->last += read / sizeof(struct direntv6);
         
         /* update memoized childs sector */
-        memcpy(&(d->dirs), &dirs, SECTOR_SIZE);
+        memcpy(&(d->dirs), &dirs, read);
+        d->cur = 0;
     }
     struct direntv6 child = d->dirs[d->cur];
     
@@ -117,7 +116,7 @@ int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr
     name[DIRENT_MAXLEN - 1] = '\0';
     
     /* update current child */
-    d->cur += sizeof(struct direntv6);
+    d->cur++;
 
     return 1;
 }
