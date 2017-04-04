@@ -1,5 +1,3 @@
-#define DEBUG 1
-
 #include "direntv6.h"
 #include "error.h"
 #include "filev6.h"
@@ -113,7 +111,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
                 char newPrefix[prefixSize + childNameSize + 1];
 
 
-                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, (inr == 1) ? "": "/", childName); // generate newPrefix
+                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, (inr == ROOT_INUMBER) ? "": "/", childName); // generate newPrefix
 
                 // recursively call direntv6_print_tree on child
                 int error = direntv6_print_tree(u, child_nr, newPrefix);
