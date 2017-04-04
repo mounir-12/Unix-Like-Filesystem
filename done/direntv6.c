@@ -97,7 +97,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
         printf("%s %s\n", SHORT_DIR_NAME, prefix);
 
         int read = 0;
-
+        
         // Iterate on all childs of the current directory
         do {
             char childName[DIRENT_MAXLEN];
@@ -113,7 +113,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
                 char newPrefix[prefixSize + childNameSize + 1];
 
 
-                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s/", prefix, childName); // generate newPrefix
+                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, (inr == 1) ? "": "/", childName); // generate newPrefix
 
                 // recursively call direntv6_print_tree on child
                 int error = direntv6_print_tree(u, child_nr, newPrefix);
