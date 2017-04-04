@@ -69,7 +69,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
                     if(data[i] == '\0') { // end of child name reached after reading k <= DIRENT_MAXLEN character
                         j = DIRENT_MAXLEN; // end iterations
                     } else if( j+1 == DIRENT_MAXLEN) { // DIRENT_MAXLEN characters were read
-                        (d->dirs)[childNumber].d_name[j] = '\0'; // end fileName with nul character
+                        (d->dirs)[childNumber].d_name[j+1] = '\0'; // end fileName with nul character
                     }
 
                 }
@@ -113,7 +113,7 @@ int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr
     
     /* output child name read */
     strncpy(name, child.d_name, DIRENT_MAXLEN);
-    name[DIRENT_MAXLEN - 1] = '\0';
+    name[DIRENT_MAXLEN] = '\0';
     
     /* update current child */
     d->cur++;
