@@ -42,7 +42,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
         // read directory content
         do {
             read = filev6_readblock(&(d->fv6), &(data[(d->fv6).offset]));
-            
+
         } while(read > 0);
 
         if(read < 0) { // error occured when reading directory content
@@ -88,33 +88,33 @@ int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr
     M_REQUIRE_NON_NULL(name);
     M_REQUIRE_NON_NULL(child_inr);
 
-	/* Read all memoized sector */
+    /* Read all memoized sector */
     if(d->cur == d->last) {
         uint8_t dirs[SECTOR_SIZE];
 
         int read = filev6_readblock(&(d->fv6), &dirs);
-        
+
         /* error occured or end of file was reached */
         if(read <= 0) {
             return read;
         }
-        
+
         /* update last child read */
         d->last += read / sizeof(struct direntv6);
-        
+
         /* update memoized childs sector */
         memcpy(&(d->dirs), &dirs, read);
         d->cur = 0;
     }
     struct direntv6 child = d->dirs[d->cur];
-    
+
     /* output child number read */
     *child_inr = child.d_inumber;
-    
+
     /* output child name read */
     strncpy(name, child.d_name, DIRENT_MAXLEN);
     name[DIRENT_MAXLEN] = '\0';
-    
+
     /* update current child */
     d->cur++;
 
@@ -127,49 +127,70 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
     int openingError = direntv6_opendir(u, inr, &d);
     int error = 0;
 
-    /* current file isn't a directory */
+    /* current node isn't a directory */
     if(openingError == ERR_INVALID_DIRECTORY_INODE) {
         /* print file path */
         printf("%s %s\n", SHORT_FIL_NAME, prefix);
         return 0;
-    } 
-    
+    }
+
     /* error occured while opening the directory */
     else if(openingError) {
         debug_print("%s\n", ERR_MESSAGES[openingError - ERR_FIRST]);
         return openingError;
     }
-    
-    /* current file is a directory */
+
+    /* current node is a directory */
     else {
 
         /* print directory path */
         printf("%s %s\n", SHORT_DIR_NAME, prefix);
 
-		int read = -1;
+        for(int i = 0; i < DIRENTRIES_PER_SECTOR; i++) {
+			
+            uint16_t child_inr = (d.dirs[i]).d_inumber; // child inode number
+            char* childName = (d.dirs[i]).d_name; // child name
+            
+            size_t prefixSize = strlen(prefix);
+            size_t childNameSize = strlen(childName);
+            
+            char newPrefix[prefixSize + 1 + childNameSize]; // new Prefix = prefix / child name
+            strncpy(newPrefix,prefix,prefixSize); // copy prefix to new prefix
+            newPrefix[prefixSize] = '/'; // add the / character
+            strncat(newPrefix,childName,childNameSize); // concatenate child Name
+            int error = direntv6_print_tree(u,child_inr,newPrefix); // call direntv6_print_tree recursively
+            if(error)
+            {
+				return error;
+			}
+        }
+        return 0;
         
-        /* Iterate on all childs of the current directory */
+/*
+        int read = -1;
+
+        // Iterate on all childs of the current directory 
         while(read) {
             char childName[DIRENT_MAXLEN];
             uint16_t child_nr;
 
             read = direntv6_readdir(&d, childName, &child_nr);
-			printf("%d\n", read);
-            /* error occured while reading directory */
+            printf("%d\n", read);
+            // error occured while reading directory 
             if(read < 0) {
                 debug_print("%s\n", ERR_MESSAGES[read - ERR_FIRST]);
                 return read;
             } else {
 
-                /* add child name to path  if path not longer
-                 * than MAXPATHLEN_UV6 */
+                // add child name to path  if path not longer
+                 // than MAXPATHLEN_UV6
                 char newPrefix[MAXPATHLEN_UV6];
                 if(sizeof(prefix) < MAXPATHLEN_UV6) {
                     strcpy(newPrefix, prefix);
                     strncat(newPrefix, childName, sizeof(childName));
                 }
 
-                /* recursively call direntv6_print_tree on child */
+                // recursively call direntv6_print_tree on child
                 error = direntv6_print_tree(u, child_nr, newPrefix);
 
                 if(error) {
@@ -180,5 +201,5 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
         }
     }
-    return 0;
+    return 0;*/
 }
