@@ -92,13 +92,13 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
     else {
 
         /* print directory path */
-        printf("%s %s\n", SHORT_DIR_NAME, prefix);
+        printf("%s %s%s\n", SHORT_DIR_NAME, prefix, (inr == ROOT_INUMBER) ? "": "/");
 
         int read = 0;
         
         // Iterate on all childs of the current directory
         do {
-            char childName[DIRENT_MAXLEN];
+            char childName[DIRENT_MAXLEN+1];
             uint16_t child_nr;
 
             read = direntv6_readdir(&d, childName, &child_nr);
