@@ -1,0 +1,84 @@
+Submission accepted
+
+stdout: making (our) test-inodes: 
+cc     test-inodes.c test-core.o error.o mount.o sector.o inode.o  -lcrypto -o test-inodes
+test-inodes done.
+making (our) test-file: 
+cc     test-file.c test-core.o error.o mount.o sector.o inode.o filev6.o sha.o  -lcrypto -o test-file
+test-file done.
+making (our) test-dirent: 
+cc    -c -o test-dirent.o test-dirent.c
+cc   test-dirent.o test-core.o error.o sector.o mount.o inode.o filev6.o direntv6.o  -lcrypto -o test-dirent
+test-dirent done.
+=====
+testing our test-inodes on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-inodes on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-dirent on disk simple.uv6: done.
+diff from reference:
+16,18c16,18
+< DIR 
+< DIR tmp/
+< FIL tmp/coucou.txt
+---
+> DIR /
+> DIR /tmp/
+> FIL /tmp/coucou.txt
+=====
+testing our test-dirent on disk aiw.uv6: done.
+diff from reference:
+16,36c16,36
+< DIR 
+< DIR books/
+< DIR books/aiw/
+< DIR books/aiw/by_chapters/
+< FIL books/aiw/by_chapters/00-licence.txt
+< FIL books/aiw/by_chapters/11-0-beg.txt
+< FIL books/aiw/by_chapters/11-0-c01.txt
+< FIL books/aiw/by_chapters/11-0-c02.txt
+< FIL books/aiw/by_chapters/11-0-c03.txt
+< FIL books/aiw/by_chapters/11-0-c04.txt
+< FIL books/aiw/by_chapters/11-0-c05.txt
+< FIL books/aiw/by_chapters/11-0-c06.txt
+< FIL books/aiw/by_chapters/11-0-c07.txt
+< FIL books/aiw/by_chapters/11-0-c08.txt
+< FIL books/aiw/by_chapters/11-0-c09.txt
+< FIL books/aiw/by_chapters/11-0-c10.txt
+< FIL books/aiw/by_chapters/11-0-c11.txt
+< FIL books/aiw/by_chapters/11-0-c12.txt
+< FIL books/aiw/by_chapters/11-0-end.txt
+< DIR books/aiw/full/
+< FIL books/aiw/full/11-0.txt
+---
+> DIR /
+> DIR /books/
+> DIR /books/aiw/
+> DIR /books/aiw/by_chapters/
+> FIL /books/aiw/by_chapters/00-licence.txt
+> FIL /books/aiw/by_chapters/11-0-beg.txt
+> FIL /books/aiw/by_chapters/11-0-c01.txt
+> FIL /books/aiw/by_chapters/11-0-c02.txt
+> FIL /books/aiw/by_chapters/11-0-c03.txt
+> FIL /books/aiw/by_chapters/11-0-c04.txt
+> FIL /books/aiw/by_chapters/11-0-c05.txt
+> FIL /books/aiw/by_chapters/11-0-c06.txt
+> FIL /books/aiw/by_chapters/11-0-c07.txt
+> FIL /books/aiw/by_chapters/11-0-c08.txt
+> FIL /books/aiw/by_chapters/11-0-c09.txt
+> FIL /books/aiw/by_chapters/11-0-c10.txt
+> FIL /books/aiw/by_chapters/11-0-c11.txt
+> FIL /books/aiw/by_chapters/11-0-c12.txt
+> FIL /books/aiw/by_chapters/11-0-end.txt
+> DIR /books/aiw/full/
+> FIL /books/aiw/full/11-0.txt
+
+stderr: 
