@@ -6,6 +6,6 @@
 
 int test(struct unix_filesystem *u)
 {
-	direntv6_print_tree(u, ROOT_INUMBER, ROOTDIR_NAME);
+	direntv6_print_tree(u, ROOT_INUMBER, "");
 	return 0;
 }

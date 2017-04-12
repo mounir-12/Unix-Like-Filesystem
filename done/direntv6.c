@@ -92,7 +92,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
     else {
 
         /* print directory path */
-        printf("%s %s%s\n", SHORT_DIR_NAME, prefix, (inr == ROOT_INUMBER) ? "": "/");
+        printf("%s %s%s\n", SHORT_DIR_NAME, prefix, "/");
 
         int read = 0;
         
@@ -111,7 +111,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
                 char newPrefix[prefixSize + childNameSize + 1];
 
 
-                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, (inr == ROOT_INUMBER) ? "": "/", childName); // generate newPrefix
+                snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, "/", childName); // generate newPrefix
 
                 // recursively call direntv6_print_tree on child
                 int error = direntv6_print_tree(u, child_nr, newPrefix);
