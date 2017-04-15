@@ -50,15 +50,15 @@ int main(void)
             int lastCharIndex = strlen(input) - 1; // last read char index
             if(lastCharIndex >= 0 && input[lastCharIndex] == '\n') { // if \n read
                 input[lastCharIndex] = '\0'; // remove \n
-                tokenize_input(input, tokenized); // tokenize user input
-
-
-                handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
             }
+            tokenize_input(input, tokenized); // tokenize user input
 
-            if(end) { // check if exit command issued
-                return 0;
-            }
+
+            handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
+        }
+
+        if(end) { // check if exit command issued
+            return 0;
         }
     }
     return 0;
