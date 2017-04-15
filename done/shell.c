@@ -49,13 +49,16 @@ int main(void)
         if(feof(stdin)) // pressed CTRL+D
         {
 			printf("\n");
-			return 0;
+			do_exit(NULL);
 		}
+		else // otherwise
+		{
         tokenize_input(input, tokenized); // tokenize user input
 
 
         handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
-
+        }
+        
         if(end) { // check if exit command issued
             return 0;
         }
@@ -87,51 +90,61 @@ int do_help(char** args)
 
 int do_mount(char** args)
 {
+	printf("Mounting...\n");
     return 0;
 }
 
 int do_lsall(char** args)
 {
+	printf("Listing files...\n");
     return 0;
 }
 
 int do_psb(char** args)
 {
+	printf("Printing Super Block...\n");
     return 0;
 }
 
 int do_cat(char** args)
 {
+	printf("Reading file...\n");
     return 0;
 }
 
 int do_sha(char** args)
 {
+	printf("Printing SHA of file...\n");
     return 0;
 }
 
 int do_inode(char** args)
 {
+	printf("Printing inode number...\n");
     return 0;
 }
 
 int do_istat(char** args)
 {
+	printf("Printing inode...\n");
     return 0;
 }
 
 int do_mkfs(char** args)
 {
+	printf("Creating new filesystem...\n");
     return 0;
 }
 
 int do_mkdir(char** args)
 {
+	printf("Creating new directory...\n");
     return 0;
 }
 
 int do_add(char** args)
 {
+	printf("Adding new file...\n");
     return 0;
 }
 

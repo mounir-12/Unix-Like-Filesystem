@@ -8,6 +8,8 @@
 
 #include "mount.h"
 #include "error.h"
+#include "inode.h"
+#include "unixv6fs.h"
 
 #define CMD_NUM 13
 #define MAX_CHARS 255
