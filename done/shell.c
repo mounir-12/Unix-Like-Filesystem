@@ -42,28 +42,25 @@ int main(void)
         printf(">");
 
         fgets(input,MAX_CHARS, stdin); // read user input
-        int lastCharIndex = strlen(input) - 1; // last read char index
-        if(lastCharIndex >= 0 && input[lastCharIndex] == '\n') { // if \n read
-            input[lastCharIndex] = '\0'; // remove \n
-        }
-        if(feof(stdin)) // pressed CTRL+D
-        {
-			printf("\n");
-			do_exit(NULL);
-		}
-		else // otherwise
-		{
-        tokenize_input(input, tokenized); // tokenize user input
+        if(feof(stdin)) { // pressed CTRL+D
+            printf("\n");
+            do_exit(NULL);
+        } else {
+            // otherwise
+            int lastCharIndex = strlen(input) - 1; // last read char index
+            if(lastCharIndex >= 0 && input[lastCharIndex] == '\n') { // if \n read
+                input[lastCharIndex] = '\0'; // remove \n
+                tokenize_input(input, tokenized); // tokenize user input
 
 
-        handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
-        }
-        
-        if(end) { // check if exit command issued
-            return 0;
+                handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
+            }
+
+            if(end) { // check if exit command issued
+                return 0;
+            }
         }
     }
-
     return 0;
 }
 
@@ -75,8 +72,7 @@ int do_exit(char** args)
 
 int do_quit(char** args)
 {
-    end = 1;
-    return 0;
+    return do_exit(args);
 }
 
 int do_help(char** args)
@@ -90,61 +86,61 @@ int do_help(char** args)
 
 int do_mount(char** args)
 {
-	printf("Mounting...\n");
+    printf("Mounting...\n");
     return 0;
 }
 
 int do_lsall(char** args)
 {
-	printf("Listing files...\n");
+    printf("Listing files...\n");
     return 0;
 }
 
 int do_psb(char** args)
 {
-	printf("Printing Super Block...\n");
+    printf("Printing Super Block...\n");
     return 0;
 }
 
 int do_cat(char** args)
 {
-	printf("Reading file...\n");
+    printf("Reading file...\n");
     return 0;
 }
 
 int do_sha(char** args)
 {
-	printf("Printing SHA of file...\n");
+    printf("Printing SHA of file...\n");
     return 0;
 }
 
 int do_inode(char** args)
 {
-	printf("Printing inode number...\n");
+    printf("Printing inode number...\n");
     return 0;
 }
 
 int do_istat(char** args)
 {
-	printf("Printing inode...\n");
+    printf("Printing inode...\n");
     return 0;
 }
 
 int do_mkfs(char** args)
 {
-	printf("Creating new filesystem...\n");
+    printf("Creating new filesystem...\n");
     return 0;
 }
 
 int do_mkdir(char** args)
 {
-	printf("Creating new directory...\n");
+    printf("Creating new directory...\n");
     return 0;
 }
 
 int do_add(char** args)
 {
-	printf("Adding new file...\n");
+    printf("Adding new file...\n");
     return 0;
 }
 
@@ -183,19 +179,16 @@ int execute_command(char** tokenized)
         return SHELL_INVALID_COMMAND; // return appropriate error code
     }
     int argsNb = 0;// number of arguments
-    for(int i = 0; i < MAX_ARGS; i++) // count the number of arguments
-    {
-		if(tokenized[i+1] != NULL) // found an valid argument
-		{
-			argsNb++; // increase number of arguments
-		}
-	}
-	if(argsNb != shell_cmds[index].argc) // not the expected number of arguments
-	{
-		return SHELL_INVALID_ARGS; // return appropriate error code
-	}
-	return shell_cmds[index].fct(&tokenized[1]); // execute command and return its error code
-    
+    for(int i = 0; i < MAX_ARGS; i++) { // count the number of arguments
+        if(tokenized[i+1] != NULL) { // found an valid argument
+            argsNb++; // increase number of arguments
+        }
+    }
+    if(argsNb != shell_cmds[index].argc) { // not the expected number of arguments
+        return SHELL_INVALID_ARGS; // return appropriate error code
+    }
+    return shell_cmds[index].fct(&tokenized[1]); // execute command and return its error code
+
 }
 
 void handle_error(int error, char* command)
