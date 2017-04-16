@@ -10,12 +10,13 @@ int filev6_open(const struct unix_filesystem *u, uint16_t inr, struct filev6 *fv
     M_REQUIRE_NON_NULL(fv6);
 
     struct inode n;
-    int error = inode_read(u, inr, &n);
+    int error = inode_read(u, inr, &n); // read inode
 
-    if(error) {
-        return error;
+    if(error) { // error occured
+        return error; // propagate error
     }
-
+    
+    // initialise file
     fv6->u = u;
     fv6->i_number = inr;
     fv6->i_node = n;

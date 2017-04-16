@@ -10,6 +10,7 @@
 #include "error.h"
 #include "inode.h"
 #include "direntv6.h"
+#include "sha.h"
 #include "unixv6fs.h"
 
 #define CMD_NUM 13

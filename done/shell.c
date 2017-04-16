@@ -35,8 +35,8 @@ int end = 0;
 
 int main(void)
 {
-	u.f = NULL; // file is NULL (not mounted yet)
-	
+    u.f = NULL; // file is NULL (not mounted yet)
+
     while(!feof(stdin) && !ferror(stdin)) {
         char input[MAX_CHARS]; // user input
         char* tokenized[MAX_ARGS+2]; // tokenized user input +2 for the first char sequence which is the command and the last arg which is an invalid arg
@@ -68,14 +68,12 @@ int main(void)
 
 int do_exit(char** args)
 {
-	if(u.f !=NULL) // already mounted
-	{
-		int error = umountv6(&u); // unmount
-		if(error) // error unmounting
-		{
-			return error; // propagate error
-		}
-	}
+    if(u.f !=NULL) { // already mounted
+        int error = umountv6(&u); // unmount
+        if(error) { // error unmounting
+            return error; // propagate error
+        }
+    }
 
     end = 1; // signal end
     return 0;
@@ -101,7 +99,7 @@ int do_mount(char** args)
 
     int error = mountv6(args[0],&u); // mount the filesystem
     if(error) { // error occured while mounting
-		u.f = NULL; // file is NULL (not mounted yet)
+        u.f = NULL; // file is NULL (not mounted yet)
         return error; // propagate error
     }
     // mounted
@@ -110,67 +108,144 @@ int do_mount(char** args)
 
 int do_lsall(char** args)
 {
-    printf("Listing files...\n");
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+    int error = direntv6_print_tree(&u, ROOT_INUMBER, "");
+    if(error) { // error occured
+        return error; // propagate error
+    }
     return 0;
 }
 
 int do_psb(char** args)
 {
-    printf("Printing Super Block...\n");
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+    mountv6_print_superblock(&u);
     return 0;
 }
 
 int do_cat(char** args)
 {
-    printf("Reading file...\n");
+    M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+    int inr = direntv6_dirlookup(&u, ROOT_INUMBER, args[0]); // search inode number
+    if(inr < 0) { // inode not found
+        return inr; // propagate error code
+    }
+
+    struct filev6 file;
+    int error = filev6_open(&u, inr, &file); // open the file
+    if(error) { // error occured while opening file
+        return error; // propagate error
+    }
+
+    if((file.i_node.i_mode & IFMT) == IFDIR) { // file is a directory
+        return SHELL_CAT_ON_DIR; // return appropriate error code
+    }
+
+    unsigned char data[inode_getsectorsize(&(file.i_node))]; // data of the file
+
+    int read = 0;
+
+    // read the whole file
+    do {
+        read = filev6_readblock(&file, &(data[file.offset]));
+
+    } while(read > 0);
+
+    // print read content
+    printf("%s", data);
     return 0;
 }
 
 int do_sha(char** args)
 {
-    printf("Printing SHA of file...\n");
+    M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+    int inr = direntv6_dirlookup(&u, ROOT_INUMBER, args[0]); // search inode number
+    if(inr < 0) { // inode not found
+        return inr; // propagate error code
+    }
+
+    struct inode n;
+    int error = inode_read(&u, inr, &n); // read inode
+
+    if(error) { // error occured
+        return error; // propagate error
+    }
+
+    print_sha_inode(&u,n,inr);
     return 0;
 }
 
 int do_inode(char** args)
 {
-	M_REQUIRE_NON_NULL(args);
-	if(u.f == NULL) // if filesystem not mounted
-	{
-		return SHELL_UNMOUNTED_FS; // return appropriate error code
-	}
-	// mounted
-	int inr = direntv6_dirlookup(&u, ROOT_INUMBER, args[0]); // search inode number
-	if(inr < 0) // inode not found
-	{
-		return inr; // propagate error code
-	}
-	
+    M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+    int inr = direntv6_dirlookup(&u, ROOT_INUMBER, args[0]); // search inode number
+    if(inr < 0) { // inode not found
+        return inr; // propagate error code
+    }
+
     printf("inode: %d\n", inr);
     return 0;
 }
 
 int do_istat(char** args)
 {
-    printf("Printing inode...\n");
+    M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+
+    int inr = 0; // inode number to be extracted
+    if(sscanf(args[0], "%d", &inr) != 1) { // args[0] has no spaces, if can't extract inode number
+        return ERR_INODE_OUTOF_RANGE; // return appropriate error code
+    }
+    
+    struct inode n;
+    int error = inode_read(&u, inr, &n); // read inode
+
+    if(error) { // error occured
+        return error; // propagate error
+    }
+    
+    inode_print(&n); // print inode
+    
     return 0;
 }
 
 int do_mkfs(char** args)
 {
-    printf("Creating new filesystem...\n");
     return 0;
 }
 
 int do_mkdir(char** args)
 {
-    printf("Creating new directory...\n");
     return 0;
 }
 
 int do_add(char** args)
 {
-    printf("Adding new file...\n");
     return 0;
 }
 

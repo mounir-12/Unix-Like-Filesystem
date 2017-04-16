@@ -44,7 +44,7 @@ int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr
     /* Read all memoized sector */
     if(d->cur == d->last) {
 
-        int read = filev6_readblock(&(d->fv6), &(d->dirs)); // read at most a block
+        int read = filev6_readblock(&(d->fv6), &(d->dirs)); // read at most a block - next block
 
         /* error occured or end of file was reached */
         if(read <= 0) {
