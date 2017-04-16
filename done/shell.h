@@ -9,6 +9,7 @@
 #include "mount.h"
 #include "error.h"
 #include "inode.h"
+#include "direntv6.h"
 #include "unixv6fs.h"
 
 #define CMD_NUM 13
@@ -127,15 +128,6 @@ int do_mkdir(char** args);
 int do_add(char** args);
 
 /**
-* @brief get the inode number for the given path
-* @param u a mounted filesystem
-* @param inr the root of the subtree
-* @param entry the pathname relative to the subtree
-* @return inr on success; <0 on error
-*/
-int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char *entry);
-
-/**
  * @brief tokenizes the input using spaces
  * @param input the input to tokenise (IN)
  * @param tokenized the tokenized input (OUT)
@@ -153,6 +145,5 @@ int execute_command(char** tokenized);
 /**
  * @brief displays error code in case of error
  * @param error the error code
- * @param command the command name
  */
-void handle_error(int error, char* command);
+void handle_error(int error);

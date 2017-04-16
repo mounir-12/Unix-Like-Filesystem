@@ -35,9 +35,11 @@ int end = 0;
 
 int main(void)
 {
+	u.f = NULL; // file is NULL (not mounted yet)
+	
     while(!feof(stdin) && !ferror(stdin)) {
         char input[MAX_CHARS]; // user input
-        char* tokenized[MAX_ARGS+1]; // tokenized user input
+        char* tokenized[MAX_ARGS+2]; // tokenized user input +2 for the first char sequence which is the command and the last arg which is an invalid arg
 
         printf(">");
 
@@ -54,7 +56,7 @@ int main(void)
             tokenize_input(input, tokenized); // tokenize user input
 
 
-            handle_error(execute_command(tokenized), tokenized[0]); // execute command and handle error in case an error occured
+            handle_error(execute_command(tokenized)); // execute command and handle error in case an error occured
         }
 
         if(end) { // check if exit command issued
@@ -66,7 +68,16 @@ int main(void)
 
 int do_exit(char** args)
 {
-    end = 1;
+	if(u.f !=NULL) // already mounted
+	{
+		int error = umountv6(&u); // unmount
+		if(error) // error unmounting
+		{
+			return error; // propagate error
+		}
+	}
+
+    end = 1; // signal end
     return 0;
 }
 
@@ -86,7 +97,14 @@ int do_help(char** args)
 
 int do_mount(char** args)
 {
-    printf("Mounting...\n");
+    M_REQUIRE_NON_NULL(args);
+
+    int error = mountv6(args[0],&u); // mount the filesystem
+    if(error) { // error occured while mounting
+		u.f = NULL; // file is NULL (not mounted yet)
+        return error; // propagate error
+    }
+    // mounted
     return 0;
 }
 
@@ -116,7 +134,19 @@ int do_sha(char** args)
 
 int do_inode(char** args)
 {
-    printf("Printing inode number...\n");
+	M_REQUIRE_NON_NULL(args);
+	if(u.f == NULL) // if filesystem not mounted
+	{
+		return SHELL_UNMOUNTED_FS; // return appropriate error code
+	}
+	// mounted
+	int inr = direntv6_dirlookup(&u, ROOT_INUMBER, args[0]); // search inode number
+	if(inr < 0) // inode not found
+	{
+		return inr; // propagate error code
+	}
+	
+    printf("inode: %d\n", inr);
     return 0;
 }
 
@@ -144,18 +174,13 @@ int do_add(char** args)
     return 0;
 }
 
-int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char *entry)
-{
-    return 0;
-}
-
 int tokenize_input(char* input, char** tokenized)
 {
     M_REQUIRE_NON_NULL(input); // return error code if NULL
     M_REQUIRE_NON_NULL(tokenized); // return error code if NULL
 
     tokenized[0] = strtok(input, " "); // compute the first token
-    for(int i = 1; i < MAX_ARGS+1; i++) { // compute next tokens
+    for(int i = 1; i < MAX_ARGS+2; i++) { // compute next tokens
         tokenized[i] = strtok(NULL, " ");
     }
     return 0;
@@ -179,8 +204,8 @@ int execute_command(char** tokenized)
         return SHELL_INVALID_COMMAND; // return appropriate error code
     }
     int argsNb = 0;// number of arguments
-    for(int i = 0; i < MAX_ARGS; i++) { // count the number of arguments
-        if(tokenized[i+1] != NULL) { // found an valid argument
+    for(int i = 0; i < MAX_ARGS+1; i++) { // count the number of arguments
+        if(tokenized[i+1] != NULL) { // found a valid argument
             argsNb++; // increase number of arguments
         }
     }
@@ -191,17 +216,16 @@ int execute_command(char** tokenized)
 
 }
 
-void handle_error(int error, char* command)
+void handle_error(int error)
 {
     if(error > 0) { // SHELL ERROR
         printf("ERROR SHELL: %s\n", SHELL_MESSAGES[error - SHELL_FIRST]);
     } else if(error < 0) { // FS error
         printf("ERROR FS: %s", ERR_MESSAGES[error - ERR_FIRST]);
         if(error == ERR_IO) { // IO ERROR
-            if(strcmp(command, "add") == 0) { // ERROR occured because of command
-                printf(": No such file or directory");
-            }
+            printf(": No such file or directory");
         }
         printf("\n");
     }
 }
+

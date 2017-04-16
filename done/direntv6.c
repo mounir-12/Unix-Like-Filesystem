@@ -5,6 +5,7 @@
 #include <string.h>
 
 # define MAXPATHLEN_UV6 1024
+int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, const char *entry, size_t length);
 
 int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct directory_reader *d)
 {
@@ -28,7 +29,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
     if(error) { // error occured
         return error; // propagate the error
     }
-    
+
     d->last = 0;
     d->cur = 0;
     return 0;
@@ -95,13 +96,13 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
         printf("%s %s%s\n", SHORT_DIR_NAME, prefix, "/");
 
         int read = 0;
-        
+
         // Iterate on all childs of the current directory
         do {
             char childName[DIRENT_MAXLEN+1];
-            uint16_t child_nr;
+            uint16_t child_inr;
 
-            read = direntv6_readdir(&d, childName, &child_nr);
+            read = direntv6_readdir(&d, childName, &child_inr);
 
             // no error
             if(read > 0) {
@@ -114,7 +115,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
                 snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, "/", childName); // generate newPrefix
 
                 // recursively call direntv6_print_tree on child
-                int error = direntv6_print_tree(u, child_nr, newPrefix);
+                int error = direntv6_print_tree(u, child_inr, newPrefix);
 
                 if(error) {
                     return error;
@@ -125,4 +126,61 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
         return read;
     }
+}
+
+int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char *entry)
+{
+    // check for non NULL arguments
+    M_REQUIRE_NON_NULL(u);
+    M_REQUIRE_NON_NULL(entry);
+
+    return direntv6_dirlookup_core(u, inr, entry, strlen(entry));
+}
+
+int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, const char *entry, size_t length)
+{
+    if(length == 0) { // found the file or directory
+        return inr; // return its inode
+    }
+
+    if(entry[0] == '/') { // found a '/' in the beginning
+        return direntv6_dirlookup_core(u, inr, &(entry[1]), length-1); // ignore it
+    }
+
+    char* lastCharName = strchr(entry, '/'); // search for '/' and save a pointer to it
+    const char* nextEntry = &(entry[length]); // pointer to the next char after the '/', initialized to point to the terminating \0
+
+    if(lastCharName != NULL) { // found the '/'
+        *lastCharName = '\0'; // end of name
+        nextEntry = lastCharName+1; // point to next char
+    }
+
+    struct directory_reader d;
+    int openingError = direntv6_opendir(u, inr, &d); // open current directory using its inode number inr
+
+    if(openingError) { // if not on a directory or other error occured
+        return openingError; // propagate the error
+    }
+    
+    int read = 0;
+    // Iterate on all childs of the current directory
+    do {
+        char childName[DIRENT_MAXLEN+1]; // child name
+        uint16_t child_inr; // child inode
+
+        read = direntv6_readdir(&d, childName, &child_inr); // read child
+
+        if(read < 0) { // error occured while reading child
+            return read; // propagate error
+        } else if(read > 0) { // succefully read child
+            if(strcmp(entry, childName) == 0) { // found the searched subdir or fil
+                return direntv6_dirlookup_core(u, child_inr, nextEntry, strlen(nextEntry)); //
+            }
+        }
+
+    } while(read > 0);
+
+    // no more children => fil or subdir not found
+    return ERR_INODE_OUTOF_RANGE;
+
 }
