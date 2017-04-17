@@ -15,7 +15,7 @@ struct shell_map shell_cmds[] = {
     {"help", do_help, "display this help", 0, ""},
     {"exit", do_exit, "exit shell", 0, ""},
     {"quit", do_quit, "exit shell", 0, ""},
-    {"mkfs", do_mkfs, "create a new filesystem", 3, " <diskname> <#inodes> <#blocks>"},
+    {"mkfs", do_mkfs, "create a new filesystem", 3, " <diskname> <#blocks> <#inodes>"},
     {"mount", do_mount, "mount the provided filesystem", 1, " <diskname>"},
     {"mkdir", do_mkdir, "create a new directory", 1, " <dirname>"},
     {"lsall", do_lsall, "list all directories and files contained in the currently mounted filesystem", 0, ""},
@@ -36,12 +36,14 @@ int end = 0;
 int main(void)
 {
     u.f = NULL; // file is NULL (not mounted yet)
+    printf("Shell interpretor\n");
+    printf("Type \"help\" for more information.\n");
 
     while(!feof(stdin) && !ferror(stdin)) {
         char input[MAX_CHARS]; // user input
         char* tokenized[MAX_ARGS+2]; // tokenized user input +2 for the first char sequence which is the command and the last arg which is an invalid arg
 
-        printf(">");
+        printf(">>> ");
 
         fgets(input,MAX_CHARS, stdin); // read user input
         if(feof(stdin)) { // pressed CTRL+D
@@ -87,7 +89,7 @@ int do_quit(char** args)
 int do_help(char** args)
 {
     for(int i = 0; i < CMD_NUM; i++) {
-        printf("- %s%s: %s.\n", shell_cmds[i].name, shell_cmds[i].args, shell_cmds[i].help);
+        printf("	- %s%s: %s.\n", shell_cmds[i].name, shell_cmds[i].args, shell_cmds[i].help);
 
     }
     return 0;
@@ -96,7 +98,11 @@ int do_help(char** args)
 int do_mount(char** args)
 {
     M_REQUIRE_NON_NULL(args);
-
+    
+    while(args[0][0] == '/') { // if starts with a '/'
+        args[0]++; // ignore '/' and point to the next char
+    }
+    
     int error = mountv6(args[0],&u); // mount the filesystem
     if(error) { // error occured while mounting
         u.f = NULL; // file is NULL (not mounted yet)
@@ -163,7 +169,8 @@ int do_cat(char** args)
     } while(read > 0);
 
     // print read content
-    printf("%s", data);
+    printf("%s\n", data);
+
     return 0;
 }
 
@@ -221,16 +228,16 @@ int do_istat(char** args)
     if(sscanf(args[0], "%d", &inr) != 1) { // args[0] has no spaces, if can't extract inode number
         return ERR_INODE_OUTOF_RANGE; // return appropriate error code
     }
-    
+
     struct inode n;
     int error = inode_read(&u, inr, &n); // read inode
 
     if(error) { // error occured
         return error; // propagate error
     }
-    
+
     inode_print(&n); // print inode
-    
+
     return 0;
 }
 

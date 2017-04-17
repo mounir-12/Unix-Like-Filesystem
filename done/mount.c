@@ -12,7 +12,7 @@ int mountv6(const char *filename, struct unix_filesystem *u)
     memset(u, 0, sizeof(*u));
     u->fbm = NULL;
     u->ibm = NULL;
-
+    
     u->f = fopen(filename,"rw"); // open file in u->f in binary read mode
     if(u->f == NULL) { // open error
         return ERR_IO;
