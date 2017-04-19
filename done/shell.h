@@ -60,7 +60,7 @@ int do_help(char** args);
 
 /**
  * @brief mounts the disk 
- * @param args absolute path of the disk to be mounted
+ * @param args path of the disk to be mounted
  * @return 0 on success; >0 on error
  */
 int do_mount(char** args);
@@ -81,21 +81,21 @@ int do_psb(char** args);
 
 /**
  * @brief prints content of the file
- * @param args absolute path of the file
+ * @param args absolute path of the file in the mounted disk
  * @return 0 on success; >0 on error
  */
 int do_cat(char** args);
 
 /**
  * @brief prints inode number and sha of the content of the file
- * @param args absolute path of the file
+ * @param args absolute path of the file in the mounted disk
  * @return 0 on success; >0 on error
  */
 int do_sha(char** args);
 
 /**
  * @brief prints inode number of the file or directory
- * @param args absolute path of the file or directory
+ * @param args absolute path of the file or directory in the mounted disk
  * @return 0 on success; >0 on error
  */
 int do_inode(char** args);
@@ -109,7 +109,7 @@ int do_istat(char** args);
 
 /**
  * @brief create a new unix filesystem
- * @param args disk name, number of sectors and numbers of inodes
+ * @param args disk name - number of sectors - numbers of inodes
  * @return 0 on success; >0 on error
  */
 int do_mkfs(char** args);
@@ -123,13 +123,13 @@ int do_mkdir(char** args);
 
 /**
  * @brief adds a local file to the mounted unix filesystem
- * @param args name of the local file and name of the destination file in the mounted unix filesystem 
+ * @param args name of the local file - name of the destination file in the mounted disk 
  * @return 0 on success; >0 on error
  */
 int do_add(char** args);
 
 /**
- * @brief tokenizes the input using spaces
+ * @brief tokenizes the input using the character ' ' (space)
  * @param input the input to tokenise (IN)
  * @param tokenized the tokenized input (OUT)
  * @return 0 on success; >0 on error
