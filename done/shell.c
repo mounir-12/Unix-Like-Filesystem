@@ -98,11 +98,7 @@ int do_help(char** args)
 int do_mount(char** args)
 {
     M_REQUIRE_NON_NULL(args);
-    
-    while(args[0][0] == '/') { // if starts with a '/'
-        args[0]++; // ignore '/' and point to the next char
-    }
-    
+
     int error = mountv6(args[0],&u); // mount the filesystem
     if(error) { // error occured while mounting
         u.f = NULL; // file is NULL (not mounted yet)
