@@ -26,15 +26,15 @@ void print_inode(const struct unix_filesystem *u, uint16_t inr)
 	int error = inode_read(u, inr, &n);
 	if(error)
 	{
-		printf("filev6_open failed for inode #%u\n", inr);
+		printf("filev6_open failed for inode #%u.\n\n", inr);
 	}
 	else
 	{
-		printf("\nPrinting inode #%u\n", inr);
+		printf("Printing inode #%u:\n", inr);
 		inode_print(&n);
 		if ((n.i_mode & IFDIR))
 		{
-			printf("which is a directory.\n");
+			printf("which is a directory.\n\n");
 		}
 		else
 		{
@@ -43,7 +43,7 @@ void print_inode(const struct unix_filesystem *u, uint16_t inr)
 			firstSector[SECTOR_SIZE] = '\0';
 			sector_read(u->f,inode_findsector(u,&n,0),firstSector);
 			printf("%s\n",firstSector);
-			printf("----\n");
+			printf("----\n\n");
 		}
 	}
 }
