@@ -98,8 +98,8 @@ int inode_read(const struct unix_filesystem *u, uint16_t inr, struct inode *inod
     return 0;
 }
 
-// returns the number of the (file_sec_off)th sector containing file content
-//so if file_sec_off = 4, return number of 4nd sector if 4th sector contains data
+// returns the sector number of the (file_sec_off)th sector containing file content
+//so if file_sec_off = 4, return sector number of 4th sector if 4th sector contains data
 int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int32_t file_sec_off)
 {
     M_REQUIRE_NON_NULL(u);
