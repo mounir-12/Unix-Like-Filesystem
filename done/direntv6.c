@@ -5,7 +5,7 @@
 #include <string.h>
 
 # define MAXPATHLEN_UV6 1024
-int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, const char *entry, size_t length);
+int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char *entry, size_t length);
 
 int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct directory_reader *d)
 {
@@ -133,11 +133,14 @@ int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char
     // check for non NULL arguments
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
+    
+    char entryCopy[strlen(entry)]; // copy which is non const
+    sprintf(entryCopy, "%s", entry); // copy content
 
-    return direntv6_dirlookup_core(u, inr, entry, strlen(entry));
+    return direntv6_dirlookup_core(u, inr, entryCopy, strlen(entryCopy));
 }
 
-int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, const char *entry, size_t length)
+int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char *entry, size_t length)
 {
     if(length == 0) { // found the file or directory
         return inr; // return its inode
@@ -148,7 +151,7 @@ int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, const
     }
 
     char* lastCharName = strchr(entry, '/'); // search for '/' and save a pointer to it
-    const char* nextEntry = &(entry[length]); // pointer to the next char after the '/', initialized to point to the terminating \0
+    char* nextEntry = &(entry[length]); // pointer to the next char after the '/', initialized to point to the terminating \0
 
     if(lastCharName != NULL) { // found the '/'
         *lastCharName = '\0'; // end of name
