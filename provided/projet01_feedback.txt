@@ -1,0 +1,17 @@
+Submission accepted
+
+stdout:
+=====
+cc    -c -o shell.o shell.c
+cc    -c -o error.o error.c
+cc    -c -o sector.o sector.c
+cc    -c -o mount.o mount.c
+cc    -c -o inode.o inode.c
+cc    -c -o filev6.o filev6.c
+cc    -c -o direntv6.o direntv6.c
+cc    -c -o sha.o sha.c
+cc   shell.o error.o sector.o mount.o inode.o filev6.o direntv6.o sha.o  -lcrypto -o shell
+Submission accepted
+
+-----
+stderr:
