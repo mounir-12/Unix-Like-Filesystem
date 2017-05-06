@@ -129,7 +129,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
  * @brief fills the given buffer with the data from the file in the given path
  * @param path path of a file in the unix filesystem
  * @param buf the buffer of data
- * @param size not used
+ * @param size the max size to be read
  * @param offset the offset from which we start reading the file
  * @param fi not used
  * @return 0 on error or end of file, >0: the number of read bytes
