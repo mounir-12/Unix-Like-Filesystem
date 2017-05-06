@@ -15,7 +15,7 @@ int filev6_open(const struct unix_filesystem *u, uint16_t inr, struct filev6 *fv
     if(error) { // error occured
         return error; // propagate error
     }
-    
+
     // initialise file
     fv6->u = u;
     fv6->i_number = inr;
@@ -33,46 +33,45 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
     M_REQUIRE_NON_NULL(buf);
 
     uint32_t size = inode_getsize(&(fv6->i_node));
-    
-    if(fv6->offset >= size) 
-    {
+
+    if(fv6->offset >= size) {
         return 0;
-    } 
-    else 
-    {
+    } else {
         /* sector to read from */
         int sector = inode_findsector(fv6->u, &(fv6->i_node), fv6->offset / SECTOR_SIZE);
 
         /* an error occured while finding the sector */
-        if(sector < 0) 
-        {
+        if(sector < 0) {
             return sector;
-        }
-        else
-        {
+        } else {
             int error = sector_read((fv6->u)->f, sector, buf);
-            
+
             /* an error occured while reading the sector */
-            if(error)
-            {
+            if(error) {
                 return error;
-            }
-            else
-            {
+            } else {
 
                 uint32_t remainingBytes = size - fv6->offset;
-                if(remainingBytes < SECTOR_SIZE) 
-                {
+                if(remainingBytes < SECTOR_SIZE) {
                     fv6->offset += remainingBytes;
                     return remainingBytes;
-                }
-                else
-                {
+                } else {
                     fv6->offset += SECTOR_SIZE;
                     return SECTOR_SIZE;
                 }
             }
         }
     }
+}
 
+int filev6_lseek(struct filev6 *fv6, int32_t offset)
+{
+	uint32_t size = inode_getsize(&(fv6->i_node));
+
+    if(offset >= size) {
+        return ERR_OFFSET_OUT_OF_RANGE;
+    }
+    
+    fv6->offset = offset;
+    return 0;
 }

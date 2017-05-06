@@ -54,7 +54,6 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
 			do
 			{
 				read = filev6_readblock(&fv6, &(data[fv6.offset]));
-				
 			}while(read > 0);
 			print_sha_from_content(data, inode_getsize(&inode));
 		}
