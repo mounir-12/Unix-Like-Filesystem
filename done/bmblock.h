@@ -16,10 +16,10 @@ extern "C" {
 
 struct bmblock_array {
     size_t length;
-    uint64_t bm[1];
     uint64_t cursor;
     uint64_t min;
     uint64_t max;
+    uint64_t bm[1];
 };
 
 #define BITS_PER_VECTOR (8*sizeof(((struct bmblock_array*)0)->bm[0]))
