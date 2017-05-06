@@ -155,6 +155,19 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
         return 0; // return 0 to signal error (no byte read to buf)
     }
     
+    int read = 0; // number of read bytes
+    unsigned char data[SECTOR_SIZE]; // data of the sector to be read
+    read = filev6_readblock(&fv6, data); // read sector
+    if(read <=0) // error occured or nothing read
+    {
+		return 0; // return 0
+	}
+	
+	memcpy(buf, data, read); // copy read data to buffer
+	
+	return read; // return number of read bytes
+	
+    /*
     size_t maxSectors = 128; // max number of sectors to read since max size to read is 64 * 2 * 512 bytes = 128 * SECTOR_SIZE
     unsigned char data[maxSectors*SECTOR_SIZE]; // data of the file
 	
@@ -174,7 +187,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
     
-    return dataOffset; // return number of read bytes
+    return dataOffset; // return number of read bytes*/
 }
 
 static int arg_parse(void *data, const char *filename, int key, struct fuse_args *outargs)
