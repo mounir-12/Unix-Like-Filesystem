@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "inode.h"
+#include "error.h"
+#include "bmblock.h"
 
 struct bmblock_array *bm_alloc(uint64_t min, uint64_t max)
 {
@@ -27,7 +29,18 @@ struct bmblock_array *bm_alloc(uint64_t min, uint64_t max)
 
 int bm_get(struct bmblock_array *bmblock_array, uint64_t x)
 {
-    return 0;
+	M_REQUIRE_NON_NULL(bmblock_array);
+	
+	if(x > bmblock_array->max || x < bmblock_array->min)
+	{
+		return ERR_BAD_PARAMETER;
+	}
+	
+	size_t index = (x - min) / 64; // index of uint64_t of x whithin bm
+	uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
+	size_t position = (x - min) % 64; // position of x whitin bits
+	int bit = (1 << position) & bits; // extract the bit
+	return bit;
 }
 
 void bm_set(struct bmblock_array *bmblock_array, uint64_t x)
@@ -35,7 +48,11 @@ void bm_set(struct bmblock_array *bmblock_array, uint64_t x)
 	M_REQUIRE_NON_NULL(bmblock_array);
 	
 	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
-		bmblock_array->bm[x] =  1; //set corresponding bit to '1';
+		size_t index = (x - min) / 64; // index of uint64_t of x whithin bm
+		uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
+		size_t position = (x - min) % 64; // position of x whitin bits
+		uint64_t newBits = (1 << position) | bits; // set the bit with an OR
+		bmblock_array->bm[index] = newBits; // save
 	}
 }
 
@@ -44,7 +61,7 @@ void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 	M_REQUIRE_NON_NULL(bmblock_array);
 	
 	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
-		bmblock_array->bm[x] =  0; //set corresponding bit to '0';
+		
 	}
 }
 
