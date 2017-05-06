@@ -188,7 +188,6 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     } while(read > 0 && dataOffset < bytesToRead); // loop while can still read and didn't read max size
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
-    
     return dataOffset; // return number of read bytes
 }
 
