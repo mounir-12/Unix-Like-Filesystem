@@ -168,7 +168,10 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
 	return read; // return number of read bytes
 	
     */
-    unsigned char data[size]; // data of the file
+    
+    size_t blocksToRead = size / SECTOR_SIZE; // in order to always read block by block
+    size_t bytesToRead = blocksToRead * SECTOR_SIZE; // number of bytes to read
+    unsigned char data[bytesToRead]; // data of the file
 	
 	size_t dataOffset = 0; // offset for data, also total number of read bytes
 	int read = 0; // read bytes in one read
@@ -182,7 +185,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
 		}
 		dataOffset += read; // otherwise, increment offset by the number of bytes read
 
-    } while(read > 0 && dataOffset < size); // loop while can still read and didn't read max size
+    } while(read > 0 && dataOffset < bytesToRead); // loop while can still read and didn't read max size
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
     
