@@ -29,44 +29,43 @@ struct bmblock_array *bm_alloc(uint64_t min, uint64_t max)
 
 int bm_get(struct bmblock_array *bmblock_array, uint64_t x)
 {
-	M_REQUIRE_NON_NULL(bmblock_array);
-	
-	if(x > bmblock_array->max || x < bmblock_array->min)
-	{
-		return ERR_BAD_PARAMETER;
-	}
-	
-	size_t index = (x - min) / 64; // index of uint64_t of x whithin bm
-	uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
-	size_t position = (x - min) % 64; // position of x whitin bits
-	int bit = ((UINT64_C(1) << position) & bits) >> position; // extract the bit
-	return bit;
+    M_REQUIRE_NON_NULL(bmblock_array);
+
+    if(x > bmblock_array->max || x < bmblock_array->min) {
+        return ERR_BAD_PARAMETER;
+    }
+
+    size_t index = (x - bmblock_array->min) / 64; // index of uint64_t of x whithin bm
+    uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
+    size_t position = (x - bmblock_array->min) % 64; // position of x whitin bits
+    int bit = ((UINT64_C(1) << position) & bits) >> position; // extract the bit
+    return bit;
 }
 
 void bm_set(struct bmblock_array *bmblock_array, uint64_t x)
 {
-	M_REQUIRE_NON_NULL(bmblock_array);
-	
-	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
-		size_t index = (x - min) / 64; // index of uint64_t of x whithin bm
-		uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
-		size_t position = (x - min) % 64; // position of x whitin bits
-		bits |= (UINT64_C(1) << position); // set the bit with an OR
-		bmblock_array->bm[index] = bits; // save
-	}
+    if(bmblock_array != NULL) {
+        if(x >= bmblock_array->min && x <= bmblock_array->max) { //value is in range
+            size_t index = (x - bmblock_array->min) / 64; // index of uint64_t of x whithin bm
+            uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
+            size_t position = (x - bmblock_array->min) % 64; // position of x whitin bits
+            bits |= (UINT64_C(1) << position); // set the bit with an OR
+            bmblock_array->bm[index] = bits; // save
+        }
+    }
 }
 
 void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 {
-	M_REQUIRE_NON_NULL(bmblock_array);
-	
-	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
-		size_t index = (x - min) / 64; // index of uint64_t of x whithin bm
-		uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
-		size_t position = (x - min) % 64; // position of x whitin bits
-		bits &= ~(UINT64_C(1) << position); // clear the bit with an AND
-		bmblock_array->bm[index] = bits; // save
-	}
+    if(bmblock_array != NULL) {
+        if(x >= bmblock_array->min && x <= bmblock_array->max) { //value is in range
+            size_t index = (x - bmblock_array->min) / 64; // index of uint64_t of x whithin bm
+            uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
+            size_t position = (x - bmblock_array->min) % 64; // position of x whitin bits
+            bits &= ~(UINT64_C(1) << position); // clear the bit with an AND
+            bmblock_array->bm[index] = bits; // save
+        }
+    }
 }
 
 int bm_find_next(struct bmblock_array *bmblock_array)
@@ -76,18 +75,26 @@ int bm_find_next(struct bmblock_array *bmblock_array)
 
 void bm_print(struct bmblock_array *bmblock_array)
 {
-	printf("**********BitMap Block START**********");
+    printf("**********BitMap Block START**********");
     if(bmblock_array == NULL) {
         printf("NULL ptr\n");
     } else {
-        printf("length: %u\n",bmblock_array->length);
-        printf("min: %u\n",bmblock_array->min);
-        printf("max: %u\n",bmblock_array->max);
-        printf("cursor: %u\n",ibmblock_array->cursor);
+        printf("length: %lu\n",bmblock_array->length);
+        printf("min: %lu\n",bmblock_array->min);
+        printf("max: %lu\n",bmblock_array->max);
+        printf("cursor: %lu\n",bmblock_array->cursor);
         printf("content:\n");
-        for(int i = 0; i < bmblock_array->length; i++){
-			
-		}
+        for(uint64_t i = 0; i < bmblock_array->length; i++) { //iterate on 64 bit numbers
+            printf("%lu:",i);
+            for(uint64_t bit = 0; bit < sizeof(uint64_t); bit++) { //iterate the numbers' bits
+                if(bit % 8 == 0) {//print a space before each byte
+                    printf(" ");
+                }
+                uint64_t index = i * sizeof(uint64_t) + bit + bmblock_array->min; //number of the bit we want to print
+                printf("%u", bm_get(bmblock_array, index)); //get bit and print it
+            }
+            printf("\n");
+        }
     }
     printf("**********BitMap Block END**********");
     fflush(stdout);
