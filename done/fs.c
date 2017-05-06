@@ -41,7 +41,7 @@ static int fs_getattr(const char *path, struct stat *stbuf)
 	M_REQUIRE_NON_NULL(path); // require non NULL argument
 	M_REQUIRE_NON_NULL(stbuf); // require non NULL argument
 	
-    memset(stbuf, 0, sizeof(struct stat)); // set all atributes of the struct to 0
+	memset(stbuf, 0, sizeof(struct stat)); // set all atributes of the struct to 0
 
     int inr = direntv6_dirlookup(&fs, ROOT_INUMBER, path); // search inode number
     if(inr < 0) { // inode not found
@@ -68,7 +68,7 @@ static int fs_getattr(const char *path, struct stat *stbuf)
     } else { // inode is a file
         stbuf->st_mode = S_IFREG | stbuf->st_mode;
     }
-
+    
     return 0;
 }
 
@@ -89,7 +89,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	
 	(void) offset;
     (void) fi;
-
+    
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
@@ -111,8 +111,12 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         uint16_t child_inr; // child inode number
         
         read = direntv6_readdir(&d, childName, &child_inr); // read directory's children
-        if(read <= 0){ // if error occured or no more children to read
+        if(read < 0){ // if error occured
 			return read;
+		}
+		else if(read == 0) // no child read
+		{
+			return 0;
 		}
 		
 		filler(buf, childName, NULL, 0); // copy child's name in the buffer
@@ -169,7 +173,6 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     } while(read > 0 && dataOffset < maxSectors*SECTOR_SIZE); // loop while can still read and didn't read max size
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
-
     
     return dataOffset; // return number of read bytes
 }
@@ -181,14 +184,10 @@ static int arg_parse(void *data, const char *filename, int key, struct fuse_args
     if (key == FUSE_OPT_KEY_NONOPT && fs.f == NULL && filename != NULL) {
         int error = mountv6(filename,&fs);
         if(error) {
-			printf("ERROR FS: %s\n", ERR_MESSAGES[error - ERR_FIRST]);
+			printf("ERROR FS: %s\n", ERR_MESSAGES[error - ERR_FIRST]); fflush(stdout);
             fs.f = NULL;
             exit(1);
         }
-        else
-        {
-			printf("Correctly mounted!\n"); fflush(stdout);
-		}
         return 0;
     }
     return 1;
@@ -203,12 +202,10 @@ static struct fuse_operations available_ops = {
 int main(int argc, char *argv[])
 {
 	fs.f = NULL; // initial value of f
-	printf("Starting main\n"); fflush(stdout);
 	// main
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv); // extract arguments
     int ret = fuse_opt_parse(&args, NULL, NULL, arg_parse); // mount the file system
     if (ret == 0) {
-		printf("Switching to fuse main\n\n"); fflush(stdout);
         ret = fuse_main(args.argc, args.argv, &available_ops, NULL); // switch to fuse main
         (void)umountv6(&fs); // unmount the file system
     }
