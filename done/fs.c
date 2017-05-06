@@ -174,18 +174,19 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     unsigned char data[bytesToRead]; // data of the file
 	
 	size_t dataOffset = 0; // offset for data, also total number of read bytes
-	int read = 0; // read bytes in one read
+	int read = 1; // read bytes in one read
 
     // read at most maxSectors sectors
-    do {
-        read = filev6_readblock(&fv6, &(data[dataOffset])); // read block and put it in data at dataOffset
+    while(read > 0 && dataOffset < bytesToRead) // loop while can still read and didn't read max size
+    {
+		read = filev6_readblock(&fv6, &(data[dataOffset])); // read block and put it in data at dataOffset
         if(read < 0) // error occured while reading block
         {
 			return 0; // return 0 to signal error (no byte read to buf)
 		}
 		dataOffset += read; // otherwise, increment offset by the number of bytes read
 
-    } while(read > 0 && dataOffset < bytesToRead); // loop while can still read and didn't read max size
+    }
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
     return dataOffset; // return number of read bytes
