@@ -39,6 +39,7 @@ int bm_get(struct bmblock_array *bmblock_array, uint64_t x)
     uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
     size_t position = (x - bmblock_array->min) % 64; // position of x whitin bits
     int bit = ((UINT64_C(1) << position) & bits) >> position; // extract the bit
+    
     return bit;
 }
 
@@ -70,7 +71,35 @@ void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 
 int bm_find_next(struct bmblock_array *bmblock_array)
 {
-    return 0;
+    M_REQUIRE_NON_NULL(bmblock_array);
+	
+	if(bmblock_array->cursor >= bmblock_array->length)
+	{
+		bmblock_array->cursor = bmblock_array->length; // correctly set cursor
+		return ERR_BITMAP_FULL; // return appropriate error code
+	}
+	
+	uint64_t bits = UINT64_C(-1);
+	
+	do
+	{
+		bits = bmblock_array->bm[bmblock_array->cursor]; // read bits pointed by cursor
+		if(bits == UINT64_C(-1)) // bits are all ones
+		{
+			bmblock_array->cursor += 1; // next 64 bits bloc
+		}
+	}while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length) // loop while 64 bits bloc not found
+	
+	if(bmblock_array->cursor == bmblock_array->length) // no free element (all ones)
+	{
+		return ERR_BITMAP_FULL;
+	}
+	uint64_t x = bmblock_array->cursor * 64 + bmblock_array->min; // first element in the found bloc of 64 bits
+	while(bm_get(bmblock_array, x) == 1)
+	{
+		x++; // next element
+	}
+    return x; // return first x with bit = 0
 }
 
 void bm_print(struct bmblock_array *bmblock_array)
