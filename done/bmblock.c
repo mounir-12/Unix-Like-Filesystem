@@ -113,15 +113,13 @@ void bm_print(struct bmblock_array *bmblock_array)
         printf("max: %lu\n",bmblock_array->max);
         printf("cursor: %lu\n",bmblock_array->cursor);
         printf("content:\n");
-        for(uint64_t i = 0; i < bmblock_array->length; i++) { //iterate on 64 bit numbers
+        for(uint64_t i = 0; i < bmblock_array->length; i++) { //iterate on 64 bits blocs
             printf("%lu:",i);
-            for(uint64_t bit = 0; bit < sizeof(uint64_t); bit++) { //iterate the numbers' bits
-                if(bit % 8 == 0) {//print a space before each byte
-                    printf(" ");
-                }
-                uint64_t index = i * sizeof(uint64_t) + bit + bmblock_array->min; //number of the bit we want to print
+            
+            for(uint64_t x = i*64 + bmblock_array->min; bit < bmblock_array->max; bit++) { //iterate the blocs bits
                 printf("%u", bm_get(bmblock_array, index)); //get bit and print it
             }
+            
             printf("\n");
         }
     }
