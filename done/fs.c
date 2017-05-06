@@ -15,6 +15,8 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include "error.h"
 #include "direntv6.h"
 #include "inode.h"
 #include "filev6.h"
@@ -59,7 +61,7 @@ static int fs_getattr(const char *path, struct stat *stbuf)
     stbuf->st_mtime = i.i_mtime[0];
     stbuf->st_ctime = 0;
 
-    int error = direntv6_print_tree(&fs, ROOT_INUMBER, "");
+    error = direntv6_print_tree(&fs, ROOT_INUMBER, "");
     if(error) { // error found
         return error; //propagate error
     }
@@ -143,15 +145,19 @@ static int arg_parse(void *data, const char *filename, int key, struct fuse_args
     if (key == FUSE_OPT_KEY_NONOPT && fs.f == NULL && filename != NULL) {
         int error = mountv6(filename,&fs);
         if(error) {
+			printf("ERROR FS: %s", ERR_MESSAGES[error - ERR_FIRST]);
             fs.f = NULL;
-            return error;
+            exit(1);
         }
+        return 0;
     }
     return 1;
 }
 
 int main(int argc, char *argv[])
 {
+	fs.f = NULL; // initial value of f
+	// main
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     int ret = fuse_opt_parse(&args, NULL, NULL, arg_parse);
     if (ret == 0) {
