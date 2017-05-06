@@ -176,7 +176,6 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
 	size_t dataOffset = 0; // offset for data, also total number of read bytes
 	int read = 1; // read bytes in one read
 
-    // read at most maxSectors sectors
     while(read > 0 && dataOffset < bytesToRead) // loop while can still read and didn't read max size
     {
 		read = filev6_readblock(&fv6, &(data[dataOffset])); // read block and put it in data at dataOffset
