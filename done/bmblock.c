@@ -1,3 +1,4 @@
+
 #include <stdint.h>
 #include <stdlib.h>
 #include "inode.h"
@@ -88,7 +89,7 @@ int bm_find_next(struct bmblock_array *bmblock_array)
 		{
 			bmblock_array->cursor += 1; // next 64 bits bloc
 		}
-	}while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length) // loop while 64 bits bloc not found
+	}while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length); // loop while 64 bits bloc not found
 	
 	if(bmblock_array->cursor == bmblock_array->length) // no free element (all ones)
 	{
@@ -108,16 +109,19 @@ void bm_print(struct bmblock_array *bmblock_array)
     if(bmblock_array == NULL) {
         printf("NULL ptr\n");
     } else {
+		uint64_t min = bmblock_array->min; // min value
+		uint64_t max = bmblock_array->max; // max value
+        
         printf("length: %lu\n",bmblock_array->length);
-        printf("min: %lu\n",bmblock_array->min);
-        printf("max: %lu\n",bmblock_array->max);
+        printf("min: %lu\n",min);
+        printf("max: %lu\n",max);
         printf("cursor: %lu\n",bmblock_array->cursor);
         printf("content:\n");
         for(uint64_t i = 0; i < bmblock_array->length; i++) { //iterate on 64 bits blocs
             printf("%lu:",i);
             
-            for(uint64_t x = i*64 + bmblock_array->min; bit < bmblock_array->max; bit++) { //iterate the blocs bits
-                printf("%u", bm_get(bmblock_array, index)); //get bit and print it
+            for(uint64_t x = i*64 + min; x < max; x++) { //iterate the blocs bits
+                printf("%u%s", bm_get(bmblock_array, x), ((x - min) % 8 == 0) ? " " : ""); //get bit and print it
             }
             
             printf("\n");
