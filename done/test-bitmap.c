@@ -14,14 +14,14 @@ int main(void)
     bm_print(bm);
     printf("find_next() = %u\n", bm_find_next(bm));
     
-    for(int i = 7; i <= 130; i += 3){
+    for(int i = 4; i <= 130; i += 3){
 		bm_set(bm, i);
 	}
 	bm_print(bm);
     printf("find_next() = %u\n", bm_find_next(bm));
     
     for(int i = 5; i <= 130; i += 5){
-		bm_set(bm, i);
+		bm_clear(bm, i);
 	}
 	bm_print(bm);
     printf("find_next() = %u\n", bm_find_next(bm));

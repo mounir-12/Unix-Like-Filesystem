@@ -73,13 +73,9 @@ void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 int bm_find_next(struct bmblock_array *bmblock_array)
 {
     M_REQUIRE_NON_NULL(bmblock_array);
-	
-	if(bmblock_array->cursor >= bmblock_array->length)
-	{
-		bmblock_array->cursor = bmblock_array->length; // correctly set cursor
-		return ERR_BITMAP_FULL; // return appropriate error code
-	}
-	
+    
+    bmblock_array->cursor = UINT64_C(0); // inital value
+
 	uint64_t bits = UINT64_C(-1);
 	
 	do
