@@ -33,14 +33,19 @@ int bm_get(struct bmblock_array *bmblock_array, uint64_t x)
 void bm_set(struct bmblock_array *bmblock_array, uint64_t x)
 {
 	M_REQUIRE_NON_NULL(bmblock_array);
-	if(x >= bmblock_array->min && x <= bmblock_array->max){
-		bmblock_array->bm[x] =  1;
+	
+	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
+		bmblock_array->bm[x] =  1; //set corresponding bit to '1';
 	}
 }
 
 void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 {
-
+	M_REQUIRE_NON_NULL(bmblock_array);
+	
+	if(x >= bmblock_array->min && x <= bmblock_array->max){ //value is in range
+		bmblock_array->bm[x] =  0; //set corresponding bit to '0';
+	}
 }
 
 int bm_find_next(struct bmblock_array *bmblock_array)
