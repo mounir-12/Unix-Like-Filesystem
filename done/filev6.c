@@ -42,7 +42,7 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
 
         /* an error occured while finding the sector */
         if(sector < 0) {
-            return sector;
+            return sector; // propagate error
         } else {
             int error = sector_read((fv6->u)->f, sector, buf);
 
@@ -66,10 +66,12 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
 
 int filev6_lseek(struct filev6 *fv6, int32_t offset)
 {
-	uint32_t size = inode_getsize(&(fv6->i_node));
+	M_REQUIRE_NON_NULL(fv6);
+    
+	uint32_t size = inode_getsize(&(fv6->i_node)); // size of file
 
-    if(offset >= size) {
-        return ERR_OFFSET_OUT_OF_RANGE;
+    if(offset >= size) { // offset out of range
+        return ERR_OFFSET_OUT_OF_RANGE; // return error
     }
     
     fv6->offset = offset;
