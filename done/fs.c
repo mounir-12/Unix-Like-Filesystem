@@ -30,6 +30,9 @@ struct unix_filesystem fs;
 
 static int fs_getattr(const char *path, struct stat *stbuf)
 {
+	M_REQUIRE_NON_NULL(path); // require non NULL argument
+	M_REQUIRE_NON_NULL(stbuf); // require non NULL argument
+	
     memset(stbuf, 0, sizeof(struct stat));
 
     int inr = direntv6_dirlookup(&fs, ROOT_INUMBER, path); // search inode number
@@ -43,28 +46,25 @@ static int fs_getattr(const char *path, struct stat *stbuf)
         return error; // propagate error
     }
 
-    stbuf->st_dev = 0;
-    stbuf->st_ino = inr;
+    stbuf->st_dev = 0; // set to 0
+    stbuf->st_ino = inr; // inode number
     if (i.i_mode & IFDIR) { // inode is a directory
         stbuf->st_mode = S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
     } else { // inode is a file
         stbuf->st_mode = S_IFREG | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
     }
-    stbuf->st_nlink = 0;
+    stbuf->st_nlink = i.i_nlink;
     stbuf->st_uid = i.i_uid;
     stbuf->st_gid = i.i_gid;
-    stbuf->st_rdev = 0;
+    stbuf->st_rdev = 0; // set to 0
     stbuf->st_size = inode_getsize(&i);
-    stbuf->st_blksize = 0;
-    stbuf->st_blocks = 0;
-    stbuf->st_atime = i.i_atime[0];
-    stbuf->st_mtime = i.i_mtime[0];
-    stbuf->st_ctime = 0;
+    stbuf->st_blksize = 512; // size of a block is 512 bytes
+    stbuf->st_blocks = inode_getsize(&i) / 512;
+    stbuf->st_atime = i.i_atime[0]; // not used
+    stbuf->st_mtime = i.i_mtime[0]; // not used
+    stbuf->st_ctime = 0; // not used
 
-    error = direntv6_print_tree(&fs, ROOT_INUMBER, "");
-    if(error) { // error found
-        return error; //propagate error
-    }
+    inode_print(&i); // print inode
 
     return 0;
 }

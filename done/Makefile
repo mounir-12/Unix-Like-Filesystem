@@ -8,5 +8,5 @@ test-dirent: test-core.o error.o sector.o mount.o inode.o filev6.o direntv6.o
 shell: shell.o error.o sector.o mount.o inode.o filev6.o direntv6.o sha.o
 fs.o: fs.c
 	$(COMPILE.c) -D_DEFAULT_SOURCE $$(pkg-config fuse --cflags) -o $@ -c $<
-fs: fs.o direntv6.o filev6.o inode.o mount.o sector.o
+fs: fs.o error.o sector.o mount.o inode.o filev6.o direntv6.o
 	$(LINK.c) -o $@ $^ $(LDLIBS) $$(pkg-config fuse --libs)
