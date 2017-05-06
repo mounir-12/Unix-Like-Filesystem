@@ -154,7 +154,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     if(error) { // error found
         return 0; // return 0 to signal error (no byte read to buf)
     }
-    
+    /*
     int read = 0; // number of read bytes
     unsigned char data[SECTOR_SIZE]; // data of the sector to be read
     read = filev6_readblock(&fv6, data); // read sector
@@ -167,12 +167,11 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
 	
 	return read; // return number of read bytes
 	
-    /*
-    size_t maxSectors = 128; // max number of sectors to read since max size to read is 64 * 2 * 512 bytes = 128 * SECTOR_SIZE
-    unsigned char data[maxSectors*SECTOR_SIZE]; // data of the file
+    */
+    unsigned char data[size]; // data of the file
 	
-	size_t dataOffset = 0; // offset for data, also number of read bytes
-	int read = 0; // read bytes
+	size_t dataOffset = 0; // offset for data, also total number of read bytes
+	int read = 0; // read bytes in one read
 
     // read at most maxSectors sectors
     do {
@@ -183,11 +182,11 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
 		}
 		dataOffset += read; // otherwise, increment offset by the number of bytes read
 
-    } while(read > 0 && dataOffset < maxSectors*SECTOR_SIZE); // loop while can still read and didn't read max size
+    } while(read > 0 && dataOffset < size); // loop while can still read and didn't read max size
     
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
     
-    return dataOffset; // return number of read bytes*/
+    return dataOffset; // return number of read bytes
 }
 
 static int arg_parse(void *data, const char *filename, int key, struct fuse_args *outargs)
