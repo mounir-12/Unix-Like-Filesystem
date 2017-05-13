@@ -34,7 +34,7 @@ int mountv6(const char *filename, struct unix_filesystem *u)
             }
             
             uint64_t min_ibm = 2; // first inode
-            uint64_t max_ibm = ((u->s).s_inode_start - (u->s).s_isize - 1) * INODES_PER_SECTOR; // last inode
+            uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR; // last inode
             u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
             
             uint64_t min_fbm = (u->s).s_block_start; // data sectors start
