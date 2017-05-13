@@ -148,9 +148,9 @@ void fill_fbm(struct unix_filesystem *u)
                 uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
                 if(size > smallFileMaxSize && size <= largeFileMaxSize) // file is a large file
                 {
-					for(int j = 0; j < ADDR_SMALL_LENGTH; j++)
+					for(int j = 0; j < ADDR_SMALL_LENGTH; j++) // iterate on indirect sector
 					{
-						int sectorNb = inodes[i].i_addr[j];
+						int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
 						if(sectorNb > 0)
 						{
 							bm_set(fbm, sectorNb); // update sector state to be used
