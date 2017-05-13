@@ -118,7 +118,8 @@ void bm_print(struct bmblock_array *bmblock_array)
             
             for(int j = 0; j < BITS_PER_VECTOR; j++) { //iterate the blocs bits
 				uint64_t x = i*BITS_PER_VECTOR + j + min; // element number
-                printf("%s%u", (j % 8 == 0) ? " " : "", bm_get(bmblock_array, x)); //get bit and print it
+				int bit = bm_get(bmblock_array, x);
+                printf("%s%u", (j % 8 == 0) ? " " : "", (bit < 0 ? 0: bit)); //get bit and print it, print 0 if bit is not within range
             }
             
             printf("\n");

@@ -2,6 +2,7 @@
 #include "sector.h"
 #include "error.h"
 #include "bmblock.h"
+#include "inode.h"
 #include <string.h>
 #include <inttypes.h>
 
@@ -32,18 +33,18 @@ int mountv6(const char *filename, struct unix_filesystem *u)
             if(error) { // error occured
                 return error; // propagate error
             }
-            
-            uint64_t min_ibm = 2; // first inode
-            uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR; // last inode
+
+            uint64_t min_ibm = 2; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
+            uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR - 1; // last inode
             u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
-            
-            uint64_t min_fbm = (u->s).s_block_start; // data sectors start
-            uint64_t max_fbm = (u->s).s_fsize; // data sectors end
+
+            uint64_t min_fbm = (u->s).s_block_start + 1; // data sectors start (ignoring first data sector known to be used)
+            uint64_t max_fbm = (u->s).s_fsize-1; // data sectors end
             u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
 
             fill_ibm(u);
             fill_fbm(u);
-            
+
             return 0;
         }
     }
@@ -86,44 +87,88 @@ int umountv6(struct unix_filesystem *u)
 
 void fill_ibm(struct unix_filesystem *u)
 {
-	struct bmblock_array *ibm = u->ibm;
+    struct bmblock_array *ibm = u->ibm;
+
+    for(uint64_t i = ibm->min; i <= ibm->max; i++) { // iterate over all elements
+        bm_clear(ibm, i); // default value
+    }
 
     uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
-    
+
     uint64_t current = ibm->min; // current inode
 
-    // iteration on the sectors
+    // iteration on the inode sectors
     for(uint32_t s = 0; s < size; ++s) {
         struct inode inodes[INODES_PER_SECTOR];
         int error = sector_read(u->f, sector + s, inodes);
 
-        // iteration on the sector's inodes 
+        // iteration on the sector's inodes
         for(int i = 0; i < INODES_PER_SECTOR; ++i) {
-			if(s == 0) // if read first sector
-			{
-				i += 2; // skip first two inodes (number 0 and 1)
-			}
-			
+            if(s == 0 && i == 0) { // if read first sector and current inode is inode 0
+                i += 2; // skip first two inodes (number 0 and 1)
+            }
+
             // if an error occured while reading the sector, consider
             // all inodes as allocated. Otherwise, check if the inode is
             // allocated.
             if(error || (inodes[i].i_mode & IALLOC)) {
                 bm_set(ibm, current);
-                current++;
             }
-            else
-            {
-				bm_clear(ibm, current);
-                current++;
-			}
+            current++;
         }
     }
 }
 
 void fill_fbm(struct unix_filesystem *u)
 {
-	struct bmblock_array *fbm = u->fbm;
-	
-	
+    struct bmblock_array *fbm = u->fbm;
+
+    for(uint64_t i = fbm->min; i <= fbm->max; i++) { // iterate over all elements
+        bm_clear(fbm, i); // default value
+    }
+
+    uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
+    uint16_t size = (u->s).s_isize; // number of sectors containing inodes
+
+    // iteration on the inode sectors
+    for(uint32_t s = 0; s < size; ++s) {
+        struct inode inodes[INODES_PER_SECTOR];
+        int error = sector_read(u->f, sector + s, inodes);
+
+        if(!error) { // no error occured
+            // iteration on the sector's inodes
+            for(int i = 0; i < INODES_PER_SECTOR; ++i) {
+                if(s == 0 && i == 0) { // if read first sector and current inode is inode 0
+                    i += 1; // skip first inode (number 0)
+                }
+                
+                uint32_t size = inode_getsize(&(inodes[i])); // file size
+                uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
+                uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
+                if(size > smallFileMaxSize && size <= largeFileMaxSize) // file is a large file
+                {
+					for(int j = 0; j < ADDR_SMALL_LENGTH; j++)
+					{
+						int sectorNb = inodes[i].i_addr[j];
+						if(sectorNb > 0)
+						{
+							bm_set(fbm, sectorNb); // update sector state to be used
+						}
+					}
+				}
+                int32_t offset = 0; // offset of sector of inode
+                int sectorNb = inode_findsector(u, &(inodes[i]), offset); // find sector number of given offset
+                while(sectorNb > 0) { // iterate while not last sector used
+                    bm_set(fbm, sectorNb); // update sector state to be used
+                    offset++; // next offset
+                    sectorNb = inode_findsector(u, &(inodes[i]), offset); // find sector number of given offset
+                }
+
+            }
+
+        }
+
+
+    }
 }
