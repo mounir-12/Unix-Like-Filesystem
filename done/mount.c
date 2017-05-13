@@ -1,6 +1,7 @@
 #include "mount.h"
 #include "sector.h"
 #include "error.h"
+#include "bmblock.h"
 #include <string.h>
 #include <inttypes.h>
 
@@ -31,13 +32,14 @@ int mountv6(const char *filename, struct unix_filesystem *u)
             if(error) { // error occured
                 return error; // propagate error
             }
+            
+            uint64_t min_ibm = 2; // first inode
+            uint64_t max_ibm = ((u->s).s_inode_start - (u->s).s_isize - 1) * INODES_PER_SECTOR; // last inode
+            u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
+            
             uint64_t min_fbm = (u->s).s_block_start; // data sectors start
             uint64_t max_fbm = (u->s).s_fsize; // data sectors end
             u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
-            
-            uint64_t min_ibm = (u->s).s_inode_start; // inode sectors start
-            uint64_t max_ibm = (u->s).s_inode_start + (u->s).s_isize-1; // inode sectors end
-            u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
 
             fill_ibm(u);
             fill_fbm(u);
@@ -84,24 +86,37 @@ int umountv6(struct unix_filesystem *u)
 
 void fill_ibm(struct unix_filesystem *u)
 {
-    uint16_t sector = (u->s).s_inode_start;
-    uint16_t size = (u->s).s_isize;
+	struct bmblock_array *ibm = u->ibm;
 
-    /* iteration on the sectors */
+    uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
+    uint16_t size = (u->s).s_isize; // number of sectors containing inodes
+    
+    uint64_t current = ibm->min; // current inode
+
+    // iteration on the sectors
     for(uint32_t s = 0; s < size; ++s) {
         struct inode inodes[INODES_PER_SECTOR];
         int error = sector_read(u->f, sector + s, inodes);
 
-        /* iteration on the sector's inodes */
+        // iteration on the sector's inodes 
         for(int i = 0; i < INODES_PER_SECTOR; ++i) {
-            uint16_t currentInode = INODES_PER_SECTOR * s + i;
-
-            /* if an error occured while reading the sector, consider
-             * all inodes as allocated. Otherwise, check if the inode is
-             * allocated. */
-            if(error || inodes[i].i_mode & IALLOC) {
-                bm_set(u->ibm, currentInode);
+			if(s == 0) // if read first sector
+			{
+				i += 2; // skip first two inodes (number 0 and 1)
+			}
+			
+            // if an error occured while reading the sector, consider
+            // all inodes as allocated. Otherwise, check if the inode is
+            // allocated.
+            if(error || (inodes[i].i_mode & IALLOC)) {
+                bm_set(ibm, current);
+                current++;
             }
+            else
+            {
+				bm_clear(ibm, current);
+                current++;
+			}
         }
     }
 }
