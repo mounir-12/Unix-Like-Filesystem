@@ -104,6 +104,11 @@ int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int
 {
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(i);
+    
+    if(file_sec_off < 0) // invalid offset
+    {
+		return ERR_OFFSET_OUT_OF_RANGE; // return approriate error code
+	}
 
     if(!(i->i_mode & IALLOC)) { // IALLOC flag is 0
         return ERR_UNALLOCATED_INODE; // return approriate error code

@@ -123,6 +123,7 @@ void fill_ibm(struct unix_filesystem *u)
 
 void fill_fbm(struct unix_filesystem *u)
 {
-
-
+	struct bmblock_array *fbm = u->fbm;
+	
+	
 }
