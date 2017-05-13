@@ -39,8 +39,9 @@ int mountv6(const char *filename, struct unix_filesystem *u)
             uint64_t max_ibm = (u->s).s_inode_start + (u->s).s_isize-1; // inode sectors end
             u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
 
-            fill_fbm(u);
             fill_ibm(u);
+            fill_fbm(u);
+            
             return 0;
         }
     }
