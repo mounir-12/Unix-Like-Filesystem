@@ -17,36 +17,35 @@ int mountv6(const char *filename, struct unix_filesystem *u)
     memset(u, 0, sizeof(*u));
 
 
-    u->f = fopen(filename,"r+b"); // open file in u->f in binary read and write binary mode
+    u->f = fopen(filename,"r+b"); // open file in u->f in binary read and write mode
     if(u->f == NULL) { // open error
         return ERR_IO;
-    } else {
-        uint8_t bootBlock[SECTOR_SIZE];
-        int error = sector_read(u->f,BOOTBLOCK_SECTOR,bootBlock); // read boot block sector
+    }
+    uint8_t bootBlock[SECTOR_SIZE];
+    int error = sector_read(u->f,BOOTBLOCK_SECTOR,bootBlock); // read boot block sector
 
-        if(!error && bootBlock[BOOTBLOCK_MAGIC_NUM_OFFSET] != BOOTBLOCK_MAGIC_NUM) { // no read error but magic num not found
-            return ERR_BADBOOTSECTOR;
-        } else if(error) { // read error
-            return error;
-        } else { // correctly mounted
-            int error = sector_read(u->f,SUPERBLOCK_SECTOR,&(u->s)); // read and return the returned value: 0 if success, error otherwise
-            if(error) { // error occured
-                return error; // propagate error
-            }
-
-            uint64_t min_ibm = 2; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
-            uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR - 1; // last inode
-            u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
-
-            uint64_t min_fbm = (u->s).s_block_start + 1; // data sectors start (ignoring first data sector known to be used)
-            uint64_t max_fbm = (u->s).s_fsize-1; // data sectors end
-            u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
-
-            fill_ibm(u);
-            fill_fbm(u);
-
-            return 0;
+    if(!error && bootBlock[BOOTBLOCK_MAGIC_NUM_OFFSET] != BOOTBLOCK_MAGIC_NUM) { // no read error but magic num not found
+        return ERR_BADBOOTSECTOR;
+    } else if(error) { // read error
+        return error;
+    } else { // correctly mounted
+        int error = sector_read(u->f,SUPERBLOCK_SECTOR,&(u->s)); // read and return the returned value: 0 if success, error otherwise
+        if(error) { // error occured
+            return error; // propagate error
         }
+
+        uint64_t min_ibm = 2; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
+        uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR - 1; // last inode
+        u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
+
+        uint64_t min_fbm = (u->s).s_block_start + 1; // data sectors start (ignoring first data sector known to be used)
+        uint64_t max_fbm = (u->s).s_fsize-1; // data sectors end
+        u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
+
+        fill_ibm(u);
+        fill_fbm(u);
+
+        return 0;
     }
 }
 
@@ -167,5 +166,53 @@ void fill_fbm(struct unix_filesystem *u)
         }
 
 
+    }
+}
+
+int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
+{
+    struct superblock s;
+    memset(&s, 0, sizeof(struct superblock));
+
+    s.s_isize = num_inodes / INODES_PER_SECTOR;
+    s.s_fsize = num_blocks;
+
+    if(s.s_fsize < s.s_isize + num_inodes) {
+        return ERR_NOT_ENOUGH_BLOCS;
+    }
+    s.s_inode_start = SUPERBLOCK_SECTOR + 1;
+    s.s_block_start = s.s_inode_start + s.s_isize;
+
+    FILE *f = fopen(filename,"w+b"); //open new file
+    if(f == NULL) { // open error
+        return ERR_IO;
+    }
+    uint8_t bootBlock[SECTOR_SIZE]; //create boot block sector
+    bootBlock[BOOTBLOCK_MAGIC_NUM_OFFSET] = BOOTBLOCK_MAGIC_NUM; // set magic number
+    int bootBlockError = sector_write(f, BOOTBLOCK_SECTOR, bootBlock); //write boot block sector
+    if(bootBlockError) { //error occured while trying to write the boot block sector
+        return bootBlockError;
+    }
+
+    int superblockError = sector_write(f, SUPERBLOCK_SECTOR, &s); //write superblock sector
+    if(superblockError) { //error occured while trying to write the superblock sector
+        return superblockError;
+    }
+
+    for(uint16_t i = s.s_inode_start; i < s.s_block_start - 1; i++) {
+        struct inode inodes[INODES_PER_SECTOR];
+        memset(&i, 0, sizeof(struct inode)); // set all values to zero
+        if(i == s.s_inode_start) { // sector containing root
+            inodes[ROOT_INUMBER].i_mode = IALLOC | IFDIR;
+        }
+        int writeError = sector_write(f, s.s_inode_start, inodes); //write the modified array to appropriate sector
+        if(writeError) {
+            return writeError;
+        }
+    }
+    if(!fclose(f)) { // closed
+        return 0;
+    } else { // error upon closing
+        return ERR_IO;
     }
 }
