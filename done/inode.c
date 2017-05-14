@@ -173,10 +173,10 @@ int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *ino
     if(!(inodes[i].i_mode & IALLOC)) { // IALLOC flag is 0
         return ERR_UNALLOCATED_INODE; // return approriate error code
     }
-    
+	
     inodes[i] = *inode; //write the inode in the array
-    
-    int writeError = sector_write(u->f, sectorNb, inodes); //write the modified array into the file
+	
+    int writeError = sector_write(u->f, start + sectorNb, inodes); //write the modified array to appropriate sector
     
     return writeError;
 }
