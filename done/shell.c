@@ -412,6 +412,12 @@ int do_mkfs(char** args)
 
 int do_mkdir(char** args)
 {
+	uint16_t DIR = IALLOC | IFDIR; // allocated directory
+	int error = direntv6_create(&u,args[0], DIR); // create a directory
+	if(error) // error occured
+	{
+		return error; // propagate error
+	}
     return 0;
 }
 
