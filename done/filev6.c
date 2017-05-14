@@ -81,18 +81,15 @@ int filev6_lseek(struct filev6 *fv6, int32_t offset)
 
 int filev6_create(struct unix_filesystem *u, uint16_t mode, struct filev6 *fv6)
 {
-    struct inode i;
-    i.i_mode = mode;
-    i.i_nlink = i.i_uid = i.i_gid = i.i_size0 = i.i_size1 = 0;
-    memset(i.i_addr, 0, ADDR_SMALL_LENGTH * sizeof(i.i_addr[0]));
-    memset(i.i_atime, 0, 2);
-    memset(i.i_mtime, 0, 2);
+    struct inode i; // inode to be written
+    memset(&i, 0, sizeof(struct inode)); // set all values to zero
+    i.i_mode = mode; // correctly set the i_mode
 
-    int error = inode_write(u, fv6->i_number, &i);
-    if(error) {
-        return error;
+    int error = inode_write(u, fv6->i_number, &i); // write the inode
+    if(error) { // error occured
+        return error; // propagate error
     }
-    fv6->i_node = i;
+    fv6->i_node = i; // set the inode
 
     return 0;
 }
