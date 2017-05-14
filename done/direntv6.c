@@ -133,7 +133,7 @@ int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char
     // check for non NULL arguments
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
-    
+
     char entryCopy[strlen(entry)]; // copy which is non const
     sprintf(entryCopy, "%s", entry); // copy content
 
@@ -164,7 +164,7 @@ int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char 
     if(openingError) { // if not on a directory or other error occured
         return openingError; // propagate the error
     }
-    
+
     int read = 0;
     // Iterate on all childs of the current directory
     do {
@@ -187,3 +187,69 @@ int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char 
     return ERR_INODE_OUTOF_RANGE;
 
 }
+
+int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
+{
+    // check for non NULL arguments
+    M_REQUIRE_NON_NULL(u);
+    M_REQUIRE_NON_NULL(entry);
+
+    char entryCopy[strlen(entry)]; // copy which is non const
+    sprintf(entryCopy, "%s", entry); // copy content
+
+    const char* child = NULL; // child name relative to parent
+    const char* parent = NULL; // parent name
+
+    char* delimiter = strrchr(entryCopy, '/'); // find first '/' going from the end of the path name
+    if(delimiter == NULL) { // character not found
+        child = entryCopy; // the entry is the full child name
+        parent = ROOTDIR_NAME ; // parent is the root
+    } else {
+        delimiter = "\0"; // end the parent name
+        child = delimiter+1; // extract child relative name;
+        parent = entryCopy;
+    }
+
+    if(strlen(child) > DIRENT_MAXLEN) { // file name is too long
+        return ERR_FILENAME_TOO_LONG; // return error code
+    }
+
+    int parentInr = direntv6_dirlookup(u, ROOT_INUMBER, parent); // get parent inode number
+    if(parentInr < 0) { // parent not found
+        return ERR_BAD_PARAMETER; // return error code
+    }
+
+    struct directory_reader d;
+    int error = direntv6_opendir(u, parentInr, &d); // read directory
+    if(error) { // error occured while reading directory
+        return error; // propagate error
+    }
+
+    char childName[DIRENT_MAXLEN+1]; // child name
+    uint16_t child_inr; // child inode
+
+    int read = 0;
+    // Iterate on all childs of the current directory
+    do {
+        char childName[DIRENT_MAXLEN+1]; // child name
+        uint16_t child_inr; // child inode
+
+        read = direntv6_readdir(&d, childName, &child_inr); // read child
+
+        if(read < 0) { // error occured while reading child
+            return read; // propagate error
+        } else if(read > 0) { // succefully read child
+            if(strcmp(child, childName) == 0) { // child already exists
+                return ERR_FILENAME_ALREADY_EXISTS;
+            }
+        }
+
+    } while(read > 0);
+    
+    // no child with the specified child name
+    
+
+
+    return 0;
+}
+
