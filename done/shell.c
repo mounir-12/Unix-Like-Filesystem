@@ -388,7 +388,26 @@ int do_istat(char** args)
 
 int do_mkfs(char** args)
 {
-    return 0;
+	uint16_t num_blocks = 0; // number of blocks
+	uint16_t num_inodes = 0; // number of inodes
+	int read = sscanf(args[2], "%hu", &num_blocks); // extract the number of blocks
+	if(read != 1) // error extracting
+	{
+		return SHELL_INVALID_ARGS; // return appropriate error code
+	}
+	
+	read = sscanf(args[3], "%hu", &num_inodes); // extract number of inodes
+	if(read != 1) // error extracting
+	{
+		return SHELL_INVALID_ARGS; // return appropriate error code
+	}
+	
+	int error = mountv6_mkfs(args[0], num_blocks, num_inodes); // make a new file system
+	if(error) // error occured
+	{
+		return error; // propagate error
+	}
+    return 0; // no error
 }
 
 int do_mkdir(char** args)

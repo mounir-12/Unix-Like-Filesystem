@@ -17,7 +17,7 @@ int mountv6(const char *filename, struct unix_filesystem *u)
     memset(u, 0, sizeof(*u));
 
 
-    u->f = fopen(filename,"r+w"); // open file in u->f in binary read and write mode
+    u->f = fopen(filename,"r+b"); // open file in u->f in binary read and write binary mode
     if(u->f == NULL) { // open error
         return ERR_IO;
     } else {
