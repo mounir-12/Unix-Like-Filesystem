@@ -88,10 +88,10 @@ int umountv6(struct unix_filesystem *u)
 void fill_ibm(struct unix_filesystem *u)
 {
     struct bmblock_array *ibm = u->ibm;
-
-    for(uint64_t i = ibm->min; i <= ibm->max; i++) { // iterate over all elements
-        bm_clear(ibm, i); // default value
-    }
+    
+    for(uint64_t i = ibm->min; i <= ibm->max; i++){
+		bm_clear(u->ibm, i);
+	}
 
     uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
@@ -123,10 +123,10 @@ void fill_ibm(struct unix_filesystem *u)
 void fill_fbm(struct unix_filesystem *u)
 {
     struct bmblock_array *fbm = u->fbm;
-
-    for(uint64_t i = fbm->min; i <= fbm->max; i++) { // iterate over all elements
-        bm_clear(fbm, i); // default value
-    }
+    
+    for(uint64_t i = fbm->min; i <= fbm->max; i++){
+		bm_clear(u->fbm, i);
+	}
 
     uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
@@ -142,21 +142,18 @@ void fill_fbm(struct unix_filesystem *u)
                 if(s == 0 && i == 0) { // if read first sector and current inode is inode 0
                     i += 1; // skip first inode (number 0)
                 }
-                
+
                 uint32_t size = inode_getsize(&(inodes[i])); // file size
                 uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
                 uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
-                if(size > smallFileMaxSize && size <= largeFileMaxSize) // file is a large file
-                {
-					for(int j = 0; j < ADDR_SMALL_LENGTH; j++) // iterate on indirect sector
-					{
-						int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
-						if(sectorNb > 0)
-						{
-							bm_set(fbm, sectorNb); // update sector state to be used
-						}
-					}
-				}
+                if(size > smallFileMaxSize && size <= largeFileMaxSize) { // file is a large file
+                    for(int j = 0; j < ADDR_SMALL_LENGTH; j++) { // iterate on indirect sector
+                        int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
+                        if(sectorNb > 0) {
+                            bm_set(fbm, sectorNb); // update sector state to be used
+                        }
+                    }
+                }
                 int32_t offset = 0; // offset of sector of inode
                 int sectorNb = inode_findsector(u, &(inodes[i]), offset); // find sector number of given offset
                 while(sectorNb > 0) { // iterate while not last sector used

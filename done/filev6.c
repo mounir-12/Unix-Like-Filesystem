@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "inode.h"
 #include "filev6.h"
 #include "sector.h"
@@ -66,14 +67,32 @@ int filev6_readblock(struct filev6 *fv6, void *buf)
 
 int filev6_lseek(struct filev6 *fv6, int32_t offset)
 {
-	M_REQUIRE_NON_NULL(fv6);
-    
-	uint32_t size = inode_getsize(&(fv6->i_node)); // size of file
+    M_REQUIRE_NON_NULL(fv6);
+
+    uint32_t size = inode_getsize(&(fv6->i_node)); // size of file
 
     if(offset >= size) { // offset out of range
         return ERR_OFFSET_OUT_OF_RANGE; // return error
     }
-    
+
     fv6->offset = offset;
+    return 0;
+}
+
+int filev6_create(struct unix_filesystem *u, uint16_t mode, struct filev6 *fv6)
+{
+    struct inode i;
+    i.i_mode = mode;
+    i.i_nlink = i.i_uid = i.i_gid = i.i_size0 = i.i_size1 = 0;
+    memset(i.i_addr, 0, ADDR_SMALL_LENGTH * sizeof(i.i_addr[0]));
+    memset(i.i_atime, 0, 2);
+    memset(i.i_mtime, 0, 2);
+
+    int error = inode_write(u, fv6->i_number, &i);
+    if(error) {
+        return error;
+    }
+    fv6->i_node = i;
+
     return 0;
 }
