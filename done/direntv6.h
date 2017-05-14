@@ -18,12 +18,10 @@ extern "C" {
 #endif
 
 struct directory_reader {
-    
     struct filev6 fv6; // represents the directory to read (current directory)
     struct direntv6 dirs[DIRENTRIES_PER_SECTOR]; // array content of the current directory's children (a child can be a file or a directory)
     int cur; // current child (which is the last visited child)
     int last; // last child read from disk
-    int unused; // so that it can compile before WEEK 6
 };
 
 /**
@@ -37,7 +35,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
 
 /**
  * @brief return the next directory entry.
- * @param d the dierctory reader
+ * @param d the directory reader
  * @param name pointer to at least DIRENTMAX_LEN+1 bytes.  Filled in with the NULL-terminated string of the entry (OUT)
  * @param child_inr pointer to the inode number in the entry (OUT)
  * @return 1 on success;  0 if there are no more entries to read; <0 on error
@@ -45,7 +43,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
 int direntv6_readdir(struct directory_reader *d, char *name, uint16_t *child_inr);
 
 /**
- * @brief debugging routine; print the a subtree (note: recursive)
+ * @brief debugging routine; print a subtree (note: recursive)
  * @param u a mounted filesystem
  * @param inr the root of the subtree
  * @param prefix the prefix to the subtree
@@ -56,8 +54,8 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 /**
  * @brief get the inode number for the given path
  * @param u a mounted filesystem
- * @param inr the current of the subtree
- * @param entry the prefix to the subtree
+ * @param inr the root of the subtree
+ * @param entry the pathname relative to the subtree
  * @return inr on success; <0 on error
  */
 int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char *entry);

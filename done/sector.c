@@ -18,7 +18,7 @@ int sector_read(FILE *f, uint32_t sector, void *data)
 
 }
 
-int sector_write(FILE *f, uint32_t sector, void  *data)
+int sector_write(FILE *f, uint32_t sector, const void *data)
 {
 	M_REQUIRE_NON_NULL(f); // return error message if f == NULL
     M_REQUIRE_NON_NULL(data); // return error message if data == NULL

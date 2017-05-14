@@ -8,6 +8,7 @@
  * @date summer 2016
  */
 
+#include <stddef.h> // for size_t
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -15,18 +16,18 @@ extern "C" {
 #endif
 
 struct bmblock_array {
-    size_t length;
-    uint64_t cursor;
-    uint64_t min;
-    uint64_t max;
-    uint64_t bm[1];
+    size_t length; // length of bm array
+    uint64_t cursor; // current 64 bits block
+    uint64_t min; // min element
+    uint64_t max; // max element
+    uint64_t bm[1]; // bits array
 };
 
 #define BITS_PER_VECTOR (8*sizeof(((struct bmblock_array*)0)->bm[0]))
 
 /**
  * @brief allocate a new bmblock_array to handle elements indexed
- * between min and may (included, thus (max-min+1) elements).
+ * between min and max (included, thus (max-min+1) elements).
  * @param min the mininum value supported by our bmblock_array
  * @param max the maxinum value supported by our bmblock_array
  * @return a pointer of the newly created bmblock_array or NULL on failure
