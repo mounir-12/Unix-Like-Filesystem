@@ -205,7 +205,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
         child = entryCopy; // the entry is the full child name
         parent = ROOTDIR_NAME ; // parent is the root
     } else {
-        delimiter = "\0"; // end the parent name
+        *delimiter = '\0'; // end the parent name
         child = delimiter+1; // extract child relative name;
         parent = entryCopy;
     }
@@ -213,7 +213,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(strlen(child) > DIRENT_MAXLEN) { // file name is too long
         return ERR_FILENAME_TOO_LONG; // return error code
     }
-
+    
     int parentInr = direntv6_dirlookup(u, ROOT_INUMBER, parent); // get parent inode number
     if(parentInr < 0) { // parent not found
         return ERR_BAD_PARAMETER; // return error code
@@ -250,7 +250,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
 		return childInr; // propagate error
 	}
 	
-	printf("new Child at inode: %d\n", childInr);
+	printf("	new Child at inode: %d.\n	Parent at inode: %d.\n", childInr, parentInr);
 
 
     return 0;

@@ -412,6 +412,14 @@ int do_mkfs(char** args)
 
 int do_mkdir(char** args)
 {
+	M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+
+    
 	uint16_t DIR = IALLOC | IFDIR; // allocated directory
 	int error = direntv6_create(&u,args[0], DIR); // create a directory
 	if(error) // error occured
@@ -423,6 +431,14 @@ int do_mkdir(char** args)
 
 int do_add(char** args)
 {
+	M_REQUIRE_NON_NULL(args);
+
+    if(u.f == NULL) { // if filesystem not mounted
+        return SHELL_UNMOUNTED_FS; // return appropriate error code
+    }
+    // mounted
+
+    
     return 0;
 }
 
