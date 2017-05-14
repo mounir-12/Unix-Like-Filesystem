@@ -225,9 +225,6 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
         return error; // propagate error
     }
 
-    char childName[DIRENT_MAXLEN+1]; // child name
-    uint16_t child_inr; // child inode
-
     int read = 0;
     // Iterate on all childs of the current directory
     do {
@@ -247,7 +244,13 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     } while(read > 0);
     
     // no child with the specified child name
-    
+    int childInr = inode_alloc(u); // allocate a new inode for the child
+    if(childInr < 0) // couldn't allocate an inode
+    {
+		return childInr; // propagate error
+	}
+	
+	printf("new Child at inode: %d\n", childInr);
 
 
     return 0;
