@@ -149,18 +149,14 @@ int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *ino
 	M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(inode);
     
-    struct bmblock_array* ibm = u->ibm;
     uint16_t start = (u->s).s_inode_start;	// first sector containing an inode
+    uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
+    uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1; // last valid inode number
 
-    if( !(inr >=ibm->min && inr<=ibm->max)) { // if not in the range [min; max]
+    if( !(inr >=0 && inr<=maxInodeNb)) { // if not in the range [0; maxInodeNb]
         return ERR_INODE_OUTOF_RANGE; // return approriate error code
     }
-    
-    if(bm_get(ibm, inr) == 0)
-    {
-		return ERR_UNALLOCATED_INODE; // return approriate error code
-	}
     
     // read sector
     struct inode inodes[INODES_PER_SECTOR];

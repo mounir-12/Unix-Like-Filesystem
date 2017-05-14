@@ -390,13 +390,13 @@ int do_mkfs(char** args)
 {
 	uint16_t num_blocks = 0; // number of blocks
 	uint16_t num_inodes = 0; // number of inodes
-	int read = sscanf(args[2], "%hu", &num_blocks); // extract the number of blocks
+	int read = sscanf(args[1], "%hu", &num_blocks); // extract the number of blocks
 	if(read != 1) // error extracting
 	{
 		return SHELL_INVALID_ARGS; // return appropriate error code
 	}
 	
-	read = sscanf(args[3], "%hu", &num_inodes); // extract number of inodes
+	read = sscanf(args[2], "%hu", &num_inodes); // extract number of inodes
 	if(read != 1) // error extracting
 	{
 		return SHELL_INVALID_ARGS; // return appropriate error code

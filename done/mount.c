@@ -1,3 +1,5 @@
+#define DEBUG 1
+
 #include "mount.h"
 #include "sector.h"
 #include "error.h"
@@ -171,43 +173,49 @@ void fill_fbm(struct unix_filesystem *u)
 
 int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
 {
+	M_REQUIRE_NON_NULL(filename);
+	
     struct superblock s;
     memset(&s, 0, sizeof(struct superblock));
-
-    s.s_isize = num_inodes / INODES_PER_SECTOR;
+    
+    // size is at least one block in case num_inodes not divisible by INODES_PER_SECTOR
+    s.s_isize = num_inodes / INODES_PER_SECTOR + (num_inodes % INODES_PER_SECTOR == 0 ? 0 : 1);
     s.s_fsize = num_blocks;
 
-    if(s.s_fsize < s.s_isize + num_inodes) {
-        return ERR_NOT_ENOUGH_BLOCS;
+    if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
+        return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
     }
     s.s_inode_start = SUPERBLOCK_SECTOR + 1;
     s.s_block_start = s.s_inode_start + s.s_isize;
 
     FILE *f = fopen(filename,"w+b"); //open new file
     if(f == NULL) { // open error
-        return ERR_IO;
+        return ERR_IO; // return appropriate error code
     }
     uint8_t bootBlock[SECTOR_SIZE]; //create boot block sector
     bootBlock[BOOTBLOCK_MAGIC_NUM_OFFSET] = BOOTBLOCK_MAGIC_NUM; // set magic number
     int bootBlockError = sector_write(f, BOOTBLOCK_SECTOR, bootBlock); //write boot block sector
     if(bootBlockError) { //error occured while trying to write the boot block sector
-        return bootBlockError;
+		fclose(f); // close file
+        return bootBlockError; // propagate error
     }
 
     int superblockError = sector_write(f, SUPERBLOCK_SECTOR, &s); //write superblock sector
     if(superblockError) { //error occured while trying to write the superblock sector
-        return superblockError;
+		fclose(f); // close file
+        return superblockError; // propagate error
     }
 
-    for(uint16_t i = s.s_inode_start; i < s.s_block_start - 1; i++) {
+    for(uint16_t i = s.s_inode_start; i < s.s_block_start ; i++) {
         struct inode inodes[INODES_PER_SECTOR];
-        memset(&i, 0, sizeof(struct inode)); // set all values to zero
+        memset(inodes, 0, sizeof(struct inode)*INODES_PER_SECTOR); // set all values of the inodes array to zero
         if(i == s.s_inode_start) { // sector containing root
             inodes[ROOT_INUMBER].i_mode = IALLOC | IFDIR;
         }
-        int writeError = sector_write(f, s.s_inode_start, inodes); //write the modified array to appropriate sector
+        int writeError = sector_write(f, i, inodes); //write the modified array to appropriate sector
         if(writeError) {
-            return writeError;
+			fclose(f); // close file
+            return writeError; // propagate error
         }
     }
     if(!fclose(f)) { // closed

@@ -13,7 +13,7 @@ int test(struct unix_filesystem *u)
 	
 	struct filev6 fv6;
 	fv6.u = u;
-	fv6.i_number = 3;
+	fv6.i_number = 4;
 	fv6.offset = 0;
 	int error = filev6_create(u, FIL, &fv6);
 	if(error)

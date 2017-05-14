@@ -25,7 +25,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
 
     // inode is a directoy
     error = filev6_open(u, inr, &(d->fv6)); // open directory
-
+    
     if(error) { // error occured
         return error; // propagate the error
     }
@@ -91,7 +91,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
     /* current node is a directory */
     else {
-
+		
         /* print directory path */
         printf("%s %s%s\n", SHORT_DIR_NAME, prefix, "/");
 

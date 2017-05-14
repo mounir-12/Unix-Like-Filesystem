@@ -84,6 +84,16 @@ int filev6_create(struct unix_filesystem *u, uint16_t mode, struct filev6 *fv6)
 	M_REQUIRE_NON_NULL(u);
 	M_REQUIRE_NON_NULL(fv6);
 	
+	int bit = bm_get(u->ibm, fv6->i_number); // get corresponding bit
+	if(bit < 0) // inode is not in the [min;max] range
+    {
+		return bit; // propagate error
+	}
+    if(bit == 0) // inode is unallocated
+    {
+		return ERR_UNALLOCATED_INODE; // return appropriate error code
+	}
+	
     struct inode i; // inode to be written
     memset(&i, 0, sizeof(struct inode)); // set all values to zero
     i.i_mode = mode; // correctly set the i_mode
