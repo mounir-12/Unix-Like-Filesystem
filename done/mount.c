@@ -88,10 +88,10 @@ int umountv6(struct unix_filesystem *u)
 void fill_ibm(struct unix_filesystem *u)
 {
     struct bmblock_array *ibm = u->ibm;
-    
-    for(uint64_t i = ibm->min; i <= ibm->max; i++){
-		bm_clear(u->ibm, i);
-	}
+
+    for(uint64_t i = ibm->min; i <= ibm->max; i++) { // iterate over all elements
+        bm_clear(ibm, i); // default value
+    }
 
     uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
@@ -123,10 +123,10 @@ void fill_ibm(struct unix_filesystem *u)
 void fill_fbm(struct unix_filesystem *u)
 {
     struct bmblock_array *fbm = u->fbm;
-    
-    for(uint64_t i = fbm->min; i <= fbm->max; i++){
-		bm_clear(u->fbm, i);
-	}
+
+    for(uint64_t i = fbm->min; i <= fbm->max; i++) { // iterate over all elements
+        bm_clear(u->fbm, i); // default value
+    }
 
     uint16_t sector = (u->s).s_inode_start; // number of first sector of inodes
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
