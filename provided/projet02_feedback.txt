@@ -1,0 +1,33 @@
+Submission accepted
+
+stdout:
+=====
+Attempting to make target shell
+cc    -c -o test-core.o test-core.c
+cc    -c -o error.o error.c
+cc    -c -o bmblock.o bmblock.c
+cc    -c -o mount.o mount.c
+cc    -c -o sector.o sector.c
+cc    -c -o inode.o inode.c
+cc     test-inodes.c test-core.o error.o bmblock.o mount.o sector.o inode.o  -lcrypto -o test-inodes
+cc    -c -o filev6.o filev6.c
+cc    -c -o sha.o sha.c
+cc     test-file.c test-core.o error.o bmblock.o mount.o sector.o inode.o filev6.o sha.o  -lcrypto -o test-file
+cc    -c -o direntv6.o direntv6.c
+cc     test-dirent.c test-core.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o  -lcrypto -o test-dirent
+cc    -c -o shell.o shell.c
+cc   shell.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o sha.o  -lcrypto -o shell
+cc    -c -D_DEFAULT_SOURCE $(pkg-config fuse --cflags) -o fs.o -c fs.c
+cc     -o fs fs.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o -lcrypto $(pkg-config fuse --libs)
+cc     test-bitmap.c bmblock.o  -lcrypto -o test-bitmap
+cc     test-mount.c test-core.o error.o bmblock.o mount.o sector.o inode.o  -lcrypto -o test-mount
+cc     test-write.c test-core.o error.o bmblock.o mount.o sector.o inode.o filev6.o  -lcrypto -o test-write
+Made target shell successfully
+=====
+Attempting to make target fs
+cc     -o fs fs.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o -lcrypto $(pkg-config fuse --libs)
+Made target fs successfully
+Submission accepted
+
+-----
+stderr:
