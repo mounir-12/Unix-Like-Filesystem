@@ -171,6 +171,7 @@ int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *ino
     int i = inr % INODES_PER_SECTOR; // index of inode inr in inodes array
 
     inodes[i] = *inode; //write the inode in the array
+    printf("inode_write: Writing at sector: %d\n", start+sectorNb);
 	
     int writeError = sector_write(u->f, start + sectorNb, inodes); //write the modified array to appropriate sector
     
