@@ -26,7 +26,7 @@ enum shell_codes {
     SHELL_CAT_ON_DIR,
     SHELL_LAST // not an actual error but to have e.g. the total number of errors
 };
- 
+
 // pointer on the function to execute
 typedef int (*shell_fct)(char**);
 
@@ -37,7 +37,7 @@ struct shell_map {
     size_t argc; // command arguments number
     const char* args; // command arguments description
 };
-	
+
 /**
  * @brief exits the shell
  * @param args not used
@@ -60,7 +60,7 @@ int do_quit(char** args);
 int do_help(char** args);
 
 /**
- * @brief mounts the disk 
+ * @brief mounts the disk
  * @param args path of the disk to be mounted
  * @return 0 on success; >0 on error
  */
@@ -124,7 +124,7 @@ int do_mkdir(char** args);
 
 /**
  * @brief adds a local file to the mounted unix filesystem
- * @param args name of the local file - name of the destination file in the mounted disk 
+ * @param args name of the local file - name of the destination file in the mounted disk
  * @return 0 on success; >0 on error
  */
 int do_add(char** args);
@@ -388,57 +388,82 @@ int do_istat(char** args)
 
 int do_mkfs(char** args)
 {
-	uint16_t num_blocks = 0; // number of blocks
-	uint16_t num_inodes = 0; // number of inodes
-	int read = sscanf(args[1], "%hu", &num_blocks); // extract the number of blocks
-	if(read != 1) // error extracting
-	{
-		return SHELL_INVALID_ARGS; // return appropriate error code
-	}
-	
-	read = sscanf(args[2], "%hu", &num_inodes); // extract number of inodes
-	if(read != 1) // error extracting
-	{
-		return SHELL_INVALID_ARGS; // return appropriate error code
-	}
-	
-	int error = mountv6_mkfs(args[0], num_blocks, num_inodes); // make a new file system
-	if(error) // error occured
-	{
-		return error; // propagate error
-	}
+    uint16_t num_blocks = 0; // number of blocks
+    uint16_t num_inodes = 0; // number of inodes
+    int read = sscanf(args[1], "%hu", &num_blocks); // extract the number of blocks
+    if(read != 1) { // error extracting
+        return SHELL_INVALID_ARGS; // return appropriate error code
+    }
+
+    read = sscanf(args[2], "%hu", &num_inodes); // extract number of inodes
+    if(read != 1) { // error extracting
+        return SHELL_INVALID_ARGS; // return appropriate error code
+    }
+
+    int error = mountv6_mkfs(args[0], num_blocks, num_inodes); // make a new file system
+    if(error) { // error occured
+        return error; // propagate error
+    }
     return 0; // no error
 }
 
 int do_mkdir(char** args)
 {
-	M_REQUIRE_NON_NULL(args);
+    M_REQUIRE_NON_NULL(args);
 
     if(u.f == NULL) { // if filesystem not mounted
         return SHELL_UNMOUNTED_FS; // return appropriate error code
     }
     // mounted
 
-    
-	uint16_t DIR = IALLOC | IFDIR; // allocated directory
-	int error = direntv6_create(&u,args[0], DIR); // create a directory
-	if(error) // error occured
-	{
-		return error; // propagate error
-	}
+
+    uint16_t DIR = IALLOC | IFDIR; // allocated directory
+    int error = direntv6_create(&u,args[0], DIR); // create a directory
+    if(error) { // error occured
+        return error; // propagate error
+    }
     return 0;
 }
 
 int do_add(char** args)
 {
-	M_REQUIRE_NON_NULL(args);
+    M_REQUIRE_NON_NULL(args);
 
     if(u.f == NULL) { // if filesystem not mounted
         return SHELL_UNMOUNTED_FS; // return appropriate error code
     }
     // mounted
-
-    
+    uint16_t FIL = IALLOC; // allocated file
+    int error = direntv6_create(&u, args[1], FIL); // create a new file in filesystem
+    if(error) // error occured while creating file
+    {
+		return error; // propagate error
+	}
+    FILE* file = fopen(args[0], "rb");
+    if(file == NULL) { // error occured
+        return ERR_IO; // return appropriate error code
+    }
+    fseek(file, 0, SEEK_END); // go to end of file
+    int size = ftell(file); // get file size
+    if(size < 0) // error occured
+    {
+		return ERR_IO; // propagate error
+	}
+    uint8_t data[size]; // buffer to contain the file data
+    fseek(file, 0, SEEK_SET); // seek the beginning of file
+    fread(data, sizeof(uint8_t), size, file); // read the whole file
+    int fileInr = direntv6_dirlookup(&u, ROOT_INUMBER, args[1]); // search inode number of new file
+    struct filev6 newFile; // filev6 for the new file
+    error = filev6_open(&u, fileInr, &newFile); // open filev6
+    if(error) // error occured
+    {
+		return error; // propagate error
+	}
+    error = filev6_writebytes(&u, &newFile, data, size); // write data to file
+    if(error) // error occured
+    {
+		return error; // propagate error
+	}
     return 0;
 }
 

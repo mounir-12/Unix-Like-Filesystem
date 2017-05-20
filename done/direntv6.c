@@ -226,7 +226,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     }
 
     int read = 0;
-    // Iterate on all childs of the current directory
+    // Iterate on all children of the current directory
     do {
         char childName[DIRENT_MAXLEN+1]; // child name
         uint16_t child_inr; // child inode
@@ -253,20 +253,19 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(error) { // error occured
         return error; // propagate error
     }
-    struct direntv6 childDir; // child directory
-    childDir.d_inumber = childInr; // copy child dir inode number
-    strncpy(childDir.d_name, child, DIRENT_MAXLEN); // copy child dir name
+    struct direntv6 childDir; // child direntv6
+    childDir.d_inumber = childInr; // copy child inode number
+    strncpy(childDir.d_name, child, DIRENT_MAXLEN); // copy child name
     error = filev6_writebytes(u, &(fv6_parent), &childDir, sizeof(struct direntv6)); // write child to directory
     if(error) { // error occured
         return error; // propagate error
     }
-    uint16_t DIR = IALLOC | IFDIR; // mode of child is allocated directory
 
     struct filev6 fv6_child; // child filev6
     fv6_child.u = u; // initialize u of child filev6
     fv6_child.i_number = childInr; // initialize inode number of child filev6
     fv6_child.offset = 0; // initialize offset of child filev6
-    error = filev6_create(u, DIR, &fv6_child); // register the child as a directory
+    error = filev6_create(u, mode, &fv6_child); // register the child as a dir or fil, depending on mode
     if(error) // error occured
     {
 		return error; // propagate error
