@@ -260,7 +260,6 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(error) { // error occured
         return error; // propagate error
     }
-    printf("Child Inode: %d\n", childInr);
 
     struct filev6 fv6_child; // child filev6
     fv6_child.u = u; // initialize u of child filev6

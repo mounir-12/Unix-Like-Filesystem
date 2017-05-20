@@ -131,7 +131,6 @@ int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, const void 
 		inode_setsize(&(fv6->i_node), size); // update inode size
     }
     // finished writing file content
-    printf("Finished writing\n");
     int error = inode_write(u, fv6->i_number, &(fv6->i_node)); // write inode to update size and addresses array
     if(error){ // error occured
 		return error; // propagate error
@@ -147,20 +146,18 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
 
     if(size < smallFileMaxSize) {
         uint32_t nb_bytes = 0; // number of bytes to be written
-        const char* block[SECTOR_SIZE]; // the block to be written
+        char block[SECTOR_SIZE]; // the block to be written
         memset(block, 0, SECTOR_SIZE); // initialize block
+        
         if(size % SECTOR_SIZE == 0) { // file size is a multiple of SECTOR_SIZE
-			printf("Multiple of SECTOR_SIZE\n");
             int nextSector = bm_find_next(u->fbm); // find next free sector number
-            printf("New sector number == %d\n", nextSector); 
             if(nextSector < 0) { // no free sector
                 return nextSector; // propagate error
             }
-            bm_set(u->fbm, nextSector);
+            bm_set(u->fbm, nextSector); // set the data sector to be allocated
             // nb_bytes is the minimun between SECTOR_SIZE and the number of bytes
             // to be written = len - offset
             nb_bytes = (SECTOR_SIZE < (len - offset)) ? SECTOR_SIZE : (len - offset);
-            printf("nb_bytes == %u\n", nb_bytes);
             memcpy(block, &(buf[offset]), nb_bytes); // copy bytes to be written (starting from offset)
             int error = sector_write(u->f, nextSector, block); // write block
             if(error) // an error occured
@@ -168,27 +165,21 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
 				return error; // propagate error
 			}
 			uint16_t addressIndex = size / SECTOR_SIZE; // index of the new sector number in inode's addresses
-			printf("addressIndex == %u\n", addressIndex);
 			(fv6->i_node).i_addr[addressIndex] = nextSector; // add the new sector number to the array
             return nb_bytes; // return number of bytes written
         } else { // file size is not a multiple of SECTOR_SIZE
-			printf("Not multiple of SECTOR_SIZE\n");
             uint32_t remaining = SECTOR_SIZE - size % SECTOR_SIZE; // remaining bytes in last occupied sector
-            printf("Remaining == %u\n", remaining);
             // nb_bytes is the minimum between the remaining bytes and the number
             //of bytes to be written = len - offset
             nb_bytes = (remaining < (len - offset)) ? SECTOR_SIZE : (len - offset);
-            printf("nb_bytes == %u\n", nb_bytes);
             uint16_t addressIndex = size / SECTOR_SIZE; // index of the last sector number in inode's addresses
             int sector = (fv6->i_node).i_addr[addressIndex]; // last sector in the file
-            printf("Rewriting to sector == %d\n", sector);
             int error = sector_read(u->f, sector, block); // read sector
             if(error) // error occured
             {
 				return error; // propagate error
 			}
 			uint32_t nextByteIndex = size % SECTOR_SIZE; // index inside the block of the next byte to be written to block
-			printf("Next byte index == %u\n", nextByteIndex);
 			memcpy(&(block[nextByteIndex]), &(buf[offset]), nb_bytes); // write subsequently nb_bytes to the block
 			error = sector_write(u->f, sector, block); // rewrite sector
             if(error) // an error occured
