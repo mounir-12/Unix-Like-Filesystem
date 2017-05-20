@@ -193,6 +193,16 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     // check for non NULL arguments
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
+    
+    if(strlen(entry) == 0) // no name so refers to ROOT
+    {
+		return ERR_FILENAME_ALREADY_EXISTS; // return error
+	}
+    if(entry[0] == '/') // if starts with a '/'
+    {
+		return direntv6_create(u, entry+1, mode); // ignore it
+	}
+	
 
     char entryCopy[strlen(entry)]; // copy of entry which is non const
     sprintf(entryCopy, "%s", entry); // copy content
@@ -237,7 +247,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
             return read; // propagate error
         } else if(read > 0) { // succefully read child
             if(strcmp(child, childName) == 0) { // child already exists
-                return ERR_FILENAME_ALREADY_EXISTS;
+                return ERR_FILENAME_ALREADY_EXISTS; // return error
             }
         }
 
