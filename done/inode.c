@@ -189,3 +189,16 @@ int inode_alloc(struct unix_filesystem *u)
 	return freeInode; // return the inode number
 }
 
+int inode_setsize(struct inode *inode, int new_size)
+{
+	M_REQUIRE_NON_NULL(inode);
+	if(new_size < 0) // invalid new size
+	{
+		return ERR_NOMEM; // return error code
+	}
+	uint8_t		i_size0 = (new_size >> 16) & 0xFF; // extract 8 most significant bits
+	uint16_t	i_size1 = (new_size & 0xFFFF); // extract 16 least significant bits
+	inode->i_size1 = i_size1; // set size1
+	inode->i_size0 = i_size0; // set size0
+	return 0;
+}

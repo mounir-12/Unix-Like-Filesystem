@@ -25,7 +25,7 @@ int direntv6_opendir(const struct unix_filesystem *u, uint16_t inr, struct direc
 
     // inode is a directoy
     error = filev6_open(u, inr, &(d->fv6)); // open directory
-    
+
     if(error) { // error occured
         return error; // propagate the error
     }
@@ -91,7 +91,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
     /* current node is a directory */
     else {
-		
+
         /* print directory path */
         printf("%s %s%s\n", SHORT_DIR_NAME, prefix, "/");
 
@@ -194,7 +194,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
 
-    char entryCopy[strlen(entry)]; // copy which is non const
+    char entryCopy[strlen(entry)]; // copy of entry which is non const
     sprintf(entryCopy, "%s", entry); // copy content
 
     const char* child = NULL; // child name relative to parent
@@ -213,7 +213,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(strlen(child) > DIRENT_MAXLEN) { // file name is too long
         return ERR_FILENAME_TOO_LONG; // return error code
     }
-    
+
     int parentInr = direntv6_dirlookup(u, ROOT_INUMBER, parent); // get parent inode number
     if(parentInr < 0) { // parent not found
         return ERR_BAD_PARAMETER; // return error code
@@ -242,17 +242,35 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
         }
 
     } while(read > 0);
-    
+
     // no child with the specified child name
     int childInr = inode_alloc(u); // allocate a new inode for the child
-    if(childInr < 0) // couldn't allocate an inode
+    if(childInr < 0) { // couldn't allocate an inode
+        return childInr; // propagate error
+    }
+    struct filev6 fv6_parent;
+    error = filev6_open(u, parentInr, &fv6_parent);
+    if(error) { // error occured
+        return error; // propagate error
+    }
+    struct direntv6 childDir; // child directory
+    childDir.d_inumber = childInr; // copy child dir inode number
+    strncpy(childDir.d_name, child, DIRENT_MAXLEN); // copy child dir name
+    error = filev6_writebytes(u, &(fv6_parent), &childDir, sizeof(struct direntv6)); // write child to directory
+    if(error) { // error occured
+        return error; // propagate error
+    }
+    uint16_t DIR = IALLOC | IFDIR; // mode of child is allocated directory
+
+    struct filev6 fv6_child; // child filev6
+    fv6_child.u = u; // initialize u of child filev6
+    fv6_child.i_number = childInr; // initialize inode number of child filev6
+    fv6_child.offset = 0; // initialize offset of child filev6
+    error = filev6_create(u, DIR, &fv6_child); // register the child as a directory
+    if(error) // error occured
     {
-		return childInr; // propagate error
+		return error; // propagate error
 	}
-	
-	printf("	new Child at inode: %d.\n	Parent at inode: %d.\n", childInr, parentInr);
-
-
     return 0;
 }
 
