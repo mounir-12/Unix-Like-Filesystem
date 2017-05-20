@@ -121,82 +121,139 @@ int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, const void 
     uint32_t size = inode_getsize(&(fv6->i_node)); // file size
 
     while(written < len) { // keep writing sectors untill writing the full buffer
-		int nbWritten = filev6_writesector(u, fv6, buf, len, written);
-		if(nbWritten < 0) // error occured
-		{
-			return nbWritten; // propagate error
-		}
-		written += nbWritten; // update total written bytes
-		size += nbWritten; // update size
-		inode_setsize(&(fv6->i_node), size); // update inode size
+        int nbWritten = filev6_writesector(u, fv6, buf, len, written);
+        if(nbWritten < 0) { // error occured
+            return nbWritten; // propagate error
+        }
+        written += nbWritten; // update total written bytes
+        size += nbWritten; // update size
+        inode_setsize(&(fv6->i_node), size); // update inode size
     }
     // finished writing file content
     int error = inode_write(u, fv6->i_number, &(fv6->i_node)); // write inode to update size and addresses array
-    if(error){ // error occured
-		return error; // propagate error
-	}
+    if(error) { // error occured
+        return error; // propagate error
+    }
     return 0;
 }
 
 int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char *buf, int len, int offset)
 {
     uint32_t size = inode_getsize(&(fv6->i_node)); // file size
-    uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
-    uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
+    uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
+    uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
+    uint32_t remaining = SECTOR_SIZE - size % SECTOR_SIZE; // remaining bytes in last occupied sector
+    // nb_bytes is the minimum between the remaining bytes and the number
+    //of bytes to be written = len - offset
+    uint32_t nb_bytes = (remaining < (len - offset)) ? SECTOR_SIZE : (len - offset); // number of bytes to be written
+    char block[SECTOR_SIZE]; // the block to be written
+    memset(block, 0, SECTOR_SIZE); // initialize block
+    int error; // possible error to propagate
 
     if(size < smallFileMaxSize) {
-        uint32_t nb_bytes = 0; // number of bytes to be written
-        char block[SECTOR_SIZE]; // the block to be written
-        memset(block, 0, SECTOR_SIZE); // initialize block
-        
+        int sector; //sector number
         if(size % SECTOR_SIZE == 0) { // file size is a multiple of SECTOR_SIZE
-            int nextSector = bm_find_next(u->fbm); // find next free sector number
-            if(nextSector < 0) { // no free sector
-                return nextSector; // propagate error
+            sector = bm_find_next(u->fbm); // find next free sector number
+            if(sector < 0) { // no free sector
+                return sector; // propagate error
             }
-            bm_set(u->fbm, nextSector); // set the data sector to be allocated
-            // nb_bytes is the minimun between SECTOR_SIZE and the number of bytes
-            // to be written = len - offset
-            nb_bytes = (SECTOR_SIZE < (len - offset)) ? SECTOR_SIZE : (len - offset);
+            bm_set(u->fbm, sector); // set the data sector to be allocated
             memcpy(block, &(buf[offset]), nb_bytes); // copy bytes to be written (starting from offset)
-            int error = sector_write(u->f, nextSector, block); // write block
-            if(error) // an error occured
-            {
-				return error; // propagate error
-			}
-			uint16_t addressIndex = size / SECTOR_SIZE; // index of the new sector number in inode's addresses
-			(fv6->i_node).i_addr[addressIndex] = nextSector; // add the new sector number to the array
-            return nb_bytes; // return number of bytes written
+            uint16_t addressIndex = size / SECTOR_SIZE; // index of the new sector number in inode's addresses
+            (fv6->i_node).i_addr[addressIndex] = sector; // add the new sector number to the array
         } else { // file size is not a multiple of SECTOR_SIZE
-            uint32_t remaining = SECTOR_SIZE - size % SECTOR_SIZE; // remaining bytes in last occupied sector
-            // nb_bytes is the minimum between the remaining bytes and the number
-            //of bytes to be written = len - offset
-            nb_bytes = (remaining < (len - offset)) ? SECTOR_SIZE : (len - offset);
             uint16_t addressIndex = size / SECTOR_SIZE; // index of the last sector number in inode's addresses
-            int sector = (fv6->i_node).i_addr[addressIndex]; // last sector in the file
-            int error = sector_read(u->f, sector, block); // read sector
-            if(error) // error occured
-            {
-				return error; // propagate error
-			}
-			uint32_t nextByteIndex = size % SECTOR_SIZE; // index inside the block of the next byte to be written to block
-			memcpy(&(block[nextByteIndex]), &(buf[offset]), nb_bytes); // write subsequently nb_bytes to the block
-			error = sector_write(u->f, sector, block); // rewrite sector
-            if(error) // an error occured
-            {
-				return error; // propagate error
-			}
-			return nb_bytes; // return number of bytes written
+            sector = (fv6->i_node).i_addr[addressIndex]; // last sector in the file
+            error = sector_read(u->f, sector, block); // read sector
+            if(error) { // error occured
+                return error; // propagate error
+            }
+            uint32_t nextByteIndex = size % SECTOR_SIZE; // index inside the block of the next byte to be written to block
+            memcpy(&(block[nextByteIndex]), &(buf[offset]), nb_bytes); // write subsequently nb_bytes to the block
         }
+        error = sector_write(u->f, sector, block); // write block
+        if(error) { // an error occured
+            return error; // propagate error
+        }
+        return nb_bytes; // return number of bytes written
+    } else if(size < largeFileMaxSize) { // file is a large File
+        char sector[SECTOR_SIZE]; // undirect sector
+        memset(sector, 0, SECTOR_SIZE); // initialize sector
+        int undirectSector; //undirect sector number
+        int directSector; //direct sector number
+
+        if(size == smallFileMaxSize) {
+
+            memcpy(sector, (fv6->i_node).i_addr, ADDR_SMALL_LENGTH * ADDRESS_SIZE); // copy direct addresses to the undirect sector
+
+            undirectSector = bm_find_next(u->fbm); // find next free sector number
+            if(undirectSector < 0) { // no free sector
+                return undirectSector; // propagate error
+            }
+            memset((fv6->i_node).i_addr, 0, ADDR_SMALL_LENGTH); // set array values to 0
+            (fv6->i_node).i_addr[0] = undirectSector; // add the first undirect sector number to the array
+        }
+
+        if(size % SECTOR_SIZE == 0) {
+            uint16_t undirectAddressIndex = size / (ADDRESSES_PER_SECTOR + SECTOR_SIZE); // index of the current undirect sector number in inode's addresses
+            uint16_t directAddressIndex = size % SECTOR_SIZE; // index of the direct sector number in undirect sector addresses
+
+            if(size % (ADDRESSES_PER_SECTOR + SECTOR_SIZE)) {
+                undirectSector = bm_find_next(u->fbm); // find next free undirect sector number
+                if(undirectSector < 0) { // no free sector
+                    return undirectSector; // propagate error
+                }
+
+                directSector = bm_find_next(u->fbm); // find next free direct sector number
+                if(directSector < 0) { // no free sector
+                    return directSector; // propagate error
+                }
+                sector[directAddressIndex] = directSector;
+
+                (fv6->i_node).i_addr[undirectAddressIndex] = undirectSector; // add the next undirect sector number to the array
+            } else {
+                undirectSector = (fv6->i_node).i_addr[undirectAddressIndex]; // last undirect sector
+                error = sector_read(u->f, undirectSector, sector); // read undirect sector
+                if(error) { // error occured
+                    return error; // propagate error
+                }
+                directSector = bm_find_next(u->fbm); // find next free direct sector number
+                if(directSector < 0) { // no free sector
+                    return directSector; // propagate error
+                }
+            }
+
+            sector[directAddressIndex] = directSector;
+            error = sector_write(u->f, undirectSector, sector); // write undirect sector
+            if(error) { // an error occured
+                return error; // propagate error
+            }
+
+            memcpy(block, &(buf[offset]), nb_bytes); // copy bytes to be written (starting from offset)
+
+        } else {
+            undirectSector = (fv6->i_node).i_addr[ADDR_SMALL_LENGTH - 2]; // last undirect sector
+            error = sector_read(u->f, undirectSector, sector); // read undirect sector
+            if(error) { // error occured
+                return error; // propagate error
+            }
+            directSector = sector[ADDRESSES_PER_SECTOR - 1]; // last direct sector
+            error = sector_read(u->f, directSector, block); // read direct sector
+            if(error) { // error occured
+                return error; // propagate error
+            }
+            uint32_t nextByteIndex = size % SECTOR_SIZE; // index inside the block of the next byte to be written to block
+            memcpy(&(block[nextByteIndex]), &(buf[offset]), nb_bytes); // write subsequently nb_bytes to the block
+        }
+
+        error = sector_write(u->f, directSector, block); // write direct sector
+        if(error) { // an error occured
+            return error; // propagate error
+        }
+
+        return nb_bytes; // return number of bytes written
+    } else { // file is too large
+        return ERR_FILE_TOO_LARGE;
     }
-    else if(size < largeFileMaxSize) // file is a large File
-    {
-		printf("Large file"); // print message
-		return len; // return buffer size
-	}
-	else // file is too large
-	{
-		return ERR_FILE_TOO_LARGE;
-	}
 
 }

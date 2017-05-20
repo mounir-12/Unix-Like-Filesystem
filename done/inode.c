@@ -115,8 +115,8 @@ int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int
 
 
     uint32_t size = inode_getsize(i); // file size
-    uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
-    uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
+    uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
+    uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
 
     if(size <= smallFileMaxSize) { // small file
         if(file_sec_off * SECTOR_SIZE >= size) { // invalid offset
