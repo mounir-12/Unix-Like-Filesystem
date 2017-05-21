@@ -128,7 +128,7 @@ int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int
             return ERR_OFFSET_OUT_OF_RANGE; // return approriate error code
         }
 
-        uint16_t sectorOfSectorsNb = i->i_addr[file_sec_off / ADDRESSES_PER_SECTOR]; // number of the sector containing the indirect sectors numbers
+        uint16_t sectorOfSectorsNb = i->i_addr[file_sec_off / ADDRESSES_PER_SECTOR]; // number of the sector containing the direct sectors numbers
 
         uint16_t sectors[ADDRESSES_PER_SECTOR];
         int error = sector_read(u->f,sectorOfSectorsNb,sectors);
