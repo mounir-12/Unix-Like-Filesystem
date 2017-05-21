@@ -205,7 +205,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
         uint16_t lastSectorOffset = usedDataSectorsNb - 1; // last sector offset
         
         uint16_t lastUndirectSectorIndex = lastSectorOffset / ADDRESSES_PER_SECTOR; // last indirect sector index in inode's addresses
-        uint16_t lastDirectSectorIndex = file_sec_off % ADDRESSES_PER_SECTOR; // last direct sector index in indirect sector
+        uint16_t lastDirectSectorIndex = lastSectorOffset % ADDRESSES_PER_SECTOR; // last direct sector index in indirect sector
         
         if(size % SECTOR_SIZE == 0) { // last direct sector full
 
