@@ -433,37 +433,34 @@ int do_add(char** args)
         return SHELL_UNMOUNTED_FS; // return appropriate error code
     }
     // mounted
-    uint16_t FIL = IALLOC; // allocated file
-    int error = direntv6_create(&u, args[1], FIL); // create a new file in filesystem
-    if(error) // error occured while creating file
-    {
-		return error; // propagate error
-	}
     FILE* file = fopen(args[0], "rb");
     if(file == NULL) { // error occured
         return ERR_IO; // return appropriate error code
     }
+    uint16_t FIL = IALLOC; // allocated file
+    int error = direntv6_create(&u, args[1], FIL); // create a new file in filesystem
+    if(error) { // error occured while creating file
+        return error; // propagate error
+    }
     fseek(file, 0, SEEK_END); // go to end of file
     int size = ftell(file); // get file size
-    if(size < 0) // error occured
-    {
-		return ERR_IO; // propagate error
-	}
+    if(size < 0) { // error occured
+        return ERR_IO; // propagate error
+    }
     uint8_t data[size]; // buffer to contain the file data
     fseek(file, 0, SEEK_SET); // seek the beginning of file
     fread(data, sizeof(uint8_t), size, file); // read the whole file
     int fileInr = direntv6_dirlookup(&u, ROOT_INUMBER, args[1]); // search inode number of new file
     struct filev6 newFile; // filev6 for the new file
     error = filev6_open(&u, fileInr, &newFile); // open filev6
-    if(error) // error occured
-    {
-		return error; // propagate error
-	}
+    if(error) { // error occured
+        return error; // propagate error
+    }
     error = filev6_writebytes(&u, &newFile, data, size); // write data to file
-    if(error) // error occured
-    {
-		return error; // propagate error
-	}
+    if(error) { // error occured
+        return error; // propagate error
+    }
+    fclose(file);
     return 0;
 }
 

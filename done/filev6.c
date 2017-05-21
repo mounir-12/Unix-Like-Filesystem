@@ -127,7 +127,11 @@ int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, const void 
         }
         written += nbWritten; // update total written bytes
         size += nbWritten; // update size
-        inode_setsize(&(fv6->i_node), size); // update inode size
+        int error = inode_setsize(&(fv6->i_node), size); // update inode size
+        if(error) // an error occured
+        {
+			return error; // propagate error
+		}
     }
     // finished writing file content
     int error = inode_write(u, fv6->i_number, &(fv6->i_node)); // write inode to update size and addresses array
@@ -142,18 +146,19 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
     uint32_t size = inode_getsize(&(fv6->i_node)); // file size
     uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
     uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
-    uint32_t remaining = SECTOR_SIZE - size % SECTOR_SIZE; // remaining bytes in last occupied sector
+    uint32_t remaining = SECTOR_SIZE - (size % SECTOR_SIZE); // remaining bytes in last occupied sector
+    
     // nb_bytes is the minimum between the remaining bytes and the number
     //of bytes to be written = len - offset
-    uint32_t nb_bytes = (remaining < (len - offset)) ? SECTOR_SIZE : (len - offset); // number of bytes to be written
+    uint32_t nb_bytes = (remaining < (len - offset)) ? remaining : (len - offset); // number of bytes to be written
     char block[SECTOR_SIZE]; // the block to be written
     memset(block, 0, SECTOR_SIZE); // initialize block
-    int error; // possible error to propagate
+    int error = 0; // possible error to propagate
 
     if(size < smallFileMaxSize) {
-        int sector; //sector number
+        int sector = 0; //sector number
         if(size % SECTOR_SIZE == 0) { // file size is a multiple of SECTOR_SIZE
-            sector = bm_find_next(u->fbm); // find next free sector number
+            int sector = bm_find_next(u->fbm); // find next free sector number
             if(sector < 0) { // no free sector
                 return sector; // propagate error
             }
@@ -179,8 +184,8 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
     } else if(size < largeFileMaxSize) { // file is a large File
         char sector[SECTOR_SIZE]; // undirect sector
         memset(sector, 0, SECTOR_SIZE); // initialize sector
-        int undirectSector; //undirect sector number
-        int directSector; //direct sector number
+        int undirectSector = 0; //undirect sector number
+        int directSector = 0; //direct sector number
 
         if(size == smallFileMaxSize) {
 
