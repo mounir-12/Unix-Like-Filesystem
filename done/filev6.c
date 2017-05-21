@@ -199,12 +199,15 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
             memset((fv6->i_node).i_addr, 0, ADDR_SMALL_LENGTH); // set array values to 0
             (fv6->i_node).i_addr[0] = undirectSector; // add the first undirect sector number to the array
         }
+        
+        uint16_t lastDataSectorOffset = size / SECTOR_SIZE; // offset
+        
+        uint16_t lastUndirectIndex = size / (ADDRESSES_PER_SECTOR * SECTOR_SIZE); // index of the current undirect sector number in inode's addresses
+        uint16_t lastDirectIndex = size % SECTOR_SIZE; // index of the direct sector number in undirect sector addresses
 
         if(size % SECTOR_SIZE == 0) {
-            uint16_t undirectAddressIndex = size / (ADDRESSES_PER_SECTOR + SECTOR_SIZE); // index of the current undirect sector number in inode's addresses
-            uint16_t directAddressIndex = size % SECTOR_SIZE; // index of the direct sector number in undirect sector addresses
 
-            if(size % (ADDRESSES_PER_SECTOR + SECTOR_SIZE)) {
+            if(size % (ADDRESSES_PER_SECTOR * SECTOR_SIZE) == 0) { // last direct and undirect sector full
                 undirectSector = bm_find_next(u->fbm); // find next free undirect sector number
                 if(undirectSector < 0) { // no free sector
                     return undirectSector; // propagate error
@@ -217,7 +220,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                 sector[directAddressIndex] = directSector;
 
                 (fv6->i_node).i_addr[undirectAddressIndex] = undirectSector; // add the next undirect sector number to the array
-            } else {
+            } else { // last direct sector full, but last undirect sector still not full
                 undirectSector = (fv6->i_node).i_addr[undirectAddressIndex]; // last undirect sector
                 error = sector_read(u->f, undirectSector, sector); // read undirect sector
                 if(error) { // error occured
