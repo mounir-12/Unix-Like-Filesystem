@@ -200,10 +200,11 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
             (fv6->i_node).i_addr[0] = undirectSector; // add the first undirect sector number to the array
         }
         
-        uint16_t lastDataSectorOffset = size / SECTOR_SIZE; // offset
+        uint16_t usedDataSectorsNb = size / SECTOR_SIZE + ((size % SECTOR_SIZE == 0) ? 0 : 1); // number of used sectors by file
+        uint16_t lastSectorOffset = usedDataSectorsNb - 1; // last sector offset
         
-        uint16_t lastUndirectIndex = size / (ADDRESSES_PER_SECTOR * SECTOR_SIZE); // index of the current undirect sector number in inode's addresses
-        uint16_t lastDirectIndex = size % SECTOR_SIZE; // index of the direct sector number in undirect sector addresses
+        uint16_t lastUndirectSector = (fv6->i_node).i_addr[lastSectorOffset / ADDRESSES_PER_SECTOR]; // last indirect sector number in inode's addresses
+        uint16_t lastDirectSector = inode_findsector(u, &(fv6->i_node), lastSectorOffset); // find last sector number
 
         if(size % SECTOR_SIZE == 0) {
 
