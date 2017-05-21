@@ -214,11 +214,14 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                 if(undirectSector < 0) { // no free sector
                     return undirectSector; // propagate error
                 }
+                bm_set(u->fbm, undirectSector); // set the undirect sector to be allocated
 
                 directSector = bm_find_next(u->fbm); // find next free direct sector number
                 if(directSector < 0) { // no free sector
                     return directSector; // propagate error
                 }
+                bm_set(u->fbm, directSector); // set the direct sector to be allocated
+                
                 sector[0] = directSector; // add the new direct sector number to the indirect sector 
 
                 (fv6->i_node).i_addr[lastUndirectSectorIndex+1] = undirectSector; // add the new undirect sector number to the array of addresses
@@ -228,10 +231,13 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                 if(error) { // error occured
                     return error; // propagate error
                 }
+                
                 directSector = bm_find_next(u->fbm); // find next free direct sector number
                 if(directSector < 0) { // no free sector
                     return directSector; // propagate error
                 }
+                bm_set(u->fbm, directSector); // set the direct sector to be allocated
+                
                 sector[lastDirectSectorIndex+1] = directSector; // add the new direct sector number to the indirect sector 
             }
             
@@ -243,12 +249,12 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
             memcpy(block, &(buf[offset]), nb_bytes); // copy bytes to be written (starting from offset)
 
         } else { // last direct sector not full
-            undirectSector = (fv6->i_node).i_addr[ADDR_SMALL_LENGTH - 2]; // last undirect sector
+            undirectSector = (fv6->i_node).i_addr[lastUndirectSectorIndex]; // last undirect sector number
             error = sector_read(u->f, undirectSector, sector); // read undirect sector
             if(error) { // error occured
                 return error; // propagate error
             }
-            directSector = sector[ADDRESSES_PER_SECTOR - 1]; // last direct sector
+            directSector = sector[lastDirectSectorIndex]; // last direct sector number
             error = sector_read(u->f, directSector, block); // read direct sector
             if(error) { // error occured
                 return error; // propagate error
