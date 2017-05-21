@@ -134,6 +134,7 @@ int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, const void 
 		}
     }
     // finished writing file content
+    printf("Finished Writing: written size == %u\n", written);
     int error = inode_write(u, fv6->i_number, &(fv6->i_node)); // write inode to update size and addresses array
     if(error) { // error occured
         return error; // propagate error
@@ -157,6 +158,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
     int error = 0; // possible error to propagate
 
     if(size < smallFileMaxSize) {
+		printf("Small File\n");
         int sector = 0; //sector number
         if(size % SECTOR_SIZE == 0) { // file size is a multiple of SECTOR_SIZE
             sector = bm_find_next(u->fbm); // find next free sector number
@@ -190,17 +192,20 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
         int directSector = 0; //direct sector number
 
         if(size == smallFileMaxSize) {
-
+			printf("Passing from Small to Large File\n");
             memcpy(sector, (fv6->i_node).i_addr, ADDR_SMALL_LENGTH * ADDRESS_SIZE); // copy direct addresses to the undirect sector
 
             undirectSector = bm_find_next(u->fbm); // find next free sector number
             if(undirectSector < 0) { // no free sector
                 return undirectSector; // propagate error
             }
+            bm_set(u->fbm, undirectSector); // set the undirect sector to be allocated
             memset((fv6->i_node).i_addr, 0, ADDR_SMALL_LENGTH); // set array values to 0
             (fv6->i_node).i_addr[0] = undirectSector; // add the first undirect sector number to the array
+            memset(sector, 0, ADDRESSES_PER_SECTOR); // initialize sector
         }
         
+        printf("Large File\n");
         uint16_t usedDataSectorsNb = size / SECTOR_SIZE + ((size % SECTOR_SIZE == 0) ? 0 : 1); // number of used sectors by file
         uint16_t lastSectorOffset = usedDataSectorsNb - 1; // last sector offset
         
@@ -208,6 +213,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
         uint16_t lastDirectSectorIndex = lastSectorOffset % ADDRESSES_PER_SECTOR; // last direct sector index in indirect sector
         
         if(size % SECTOR_SIZE == 0) { // last direct sector full
+			printf("Multiple of SECTOR_SIZE\n");
 
             if(size % (ADDRESSES_PER_SECTOR * SECTOR_SIZE) == 0) { // last undirect sector full, create a new indirect sector
                 undirectSector = bm_find_next(u->fbm); // find next free undirect sector number
@@ -215,13 +221,13 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                     return undirectSector; // propagate error
                 }
                 bm_set(u->fbm, undirectSector); // set the undirect sector to be allocated
-
+                
                 directSector = bm_find_next(u->fbm); // find next free direct sector number
                 if(directSector < 0) { // no free sector
                     return directSector; // propagate error
                 }
                 bm_set(u->fbm, directSector); // set the direct sector to be allocated
-                
+
                 sector[0] = directSector; // add the new direct sector number to the indirect sector 
 
                 (fv6->i_node).i_addr[lastUndirectSectorIndex+1] = undirectSector; // add the new undirect sector number to the array of addresses
@@ -241,6 +247,10 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                 sector[lastDirectSectorIndex+1] = directSector; // add the new direct sector number to the indirect sector 
             }
             
+            printf("Undirect sector: %d\n", undirectSector);
+            printf("Direct sector: %d\n", directSector);
+            printf("allocated sectors\n");
+            
             error = sector_write(u->f, undirectSector, sector); // write undirect sector
             if(error) { // an error occured
                 return error; // propagate error
@@ -249,6 +259,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
             memcpy(block, &(buf[offset]), nb_bytes); // copy bytes to be written (starting from offset)
 
         } else { // last direct sector not full
+			printf("Not Multiple of SECTOR_SIZE\n");
             undirectSector = (fv6->i_node).i_addr[lastUndirectSectorIndex]; // last undirect sector number
             error = sector_read(u->f, undirectSector, sector); // read undirect sector
             if(error) { // error occured

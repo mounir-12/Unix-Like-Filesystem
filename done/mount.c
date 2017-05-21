@@ -179,8 +179,8 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     memset(&s, 0, sizeof(struct superblock));
     
     // size is at least one block in case num_inodes not divisible by INODES_PER_SECTOR
-    s.s_isize = num_inodes / INODES_PER_SECTOR + (num_inodes % INODES_PER_SECTOR == 0 ? 0 : 1);
-    s.s_fsize = num_blocks;
+    s.s_isize = num_inodes / INODES_PER_SECTOR + (num_inodes % INODES_PER_SECTOR == 0 ? 0 : 1); // number of blocks containing inodes
+    s.s_fsize = num_blocks; // total number of blocks
 
     if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
         return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
@@ -206,13 +206,22 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
         return superblockError; // propagate error
     }
 
-    for(uint16_t i = s.s_inode_start; i < s.s_block_start ; i++) {
+    for(uint16_t i = s.s_inode_start; i < s.s_block_start ; i++) { // iterate on inodes blocks
         struct inode inodes[INODES_PER_SECTOR];
         memset(inodes, 0, sizeof(struct inode)*INODES_PER_SECTOR); // set all values of the inodes array to zero
         if(i == s.s_inode_start) { // sector containing root
             inodes[ROOT_INUMBER].i_mode = IALLOC | IFDIR;
         }
         int writeError = sector_write(f, i, inodes); //write the modified array to appropriate sector
+        if(writeError) {
+			fclose(f); // close file
+            return writeError; // propagate error
+        }
+    }
+    for(uint16_t i = s.s_block_start; i < s.s_fsize ; i++) { // iterate on data blocks
+        char sector[SECTOR_SIZE]; // create sector
+        memset(sector, 0, SECTOR_SIZE); // set sector to zero
+        int writeError = sector_write(f, i, sector); //write sector
         if(writeError) {
 			fclose(f); // close file
             return writeError; // propagate error
