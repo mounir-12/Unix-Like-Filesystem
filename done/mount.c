@@ -183,13 +183,13 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     
     s.s_isize = num_inodes / INODES_PER_SECTOR; // number of blocks containing inodes
     s.s_fsize = num_blocks; // total number of blocks
-    
+
     if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
         return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
     }
     s.s_inode_start = SUPERBLOCK_SECTOR + 1;
     s.s_block_start = s.s_inode_start + s.s_isize;
-
+    
     FILE *f = fopen(filename,"w+b"); //open new file
     if(f == NULL) { // open error
         return ERR_IO; // return appropriate error code
@@ -220,7 +220,7 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
             return writeError; // propagate error
         }
     }
-    for(uint16_t i = s.s_block_start; i < s.s_fsize + s.s_inode_start ; i++) { // iterate on data blocks
+    for(uint16_t i = s.s_block_start; i < s.s_fsize; i++) { // iterate on data blocks
         char sector[SECTOR_SIZE]; // create sector
         memset(sector, 0, SECTOR_SIZE); // set sector to zero
         int writeError = sector_write(f, i, sector); //write sector
