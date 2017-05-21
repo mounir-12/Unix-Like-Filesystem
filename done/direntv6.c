@@ -206,12 +206,12 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     char entryCopy[strlen(entry)]; // create a copy of entry which is non const
     sprintf(entryCopy, "%s", entry); // copy content
     
-    /*size_t entrySize = strlen(entryCopy); // size of copy
+    size_t entrySize = strlen(entryCopy); // size of copy
     while(entryCopy[entrySize-1] == '/') // entryCopy ends with a '/'
     {
 		entryCopy[entrySize-1] = '\0'; // remove the '/'
 		entrySize--; // decrement size
-	}*/
+	}
 
     const char* child = NULL; // child name relative to parent
     const char* parent = NULL; // parent name
