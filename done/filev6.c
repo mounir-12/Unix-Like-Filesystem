@@ -183,6 +183,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
         }
         return nb_bytes; // return number of bytes written*/
     } else if(size < largeFileMaxSize) { // file is a large File
+		
         char sector[SECTOR_SIZE]; // undirect sector
         memset(sector, 0, SECTOR_SIZE); // initialize sector
         int undirectSector = 0; //undirect sector number
@@ -203,12 +204,12 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
         uint16_t usedDataSectorsNb = size / SECTOR_SIZE + ((size % SECTOR_SIZE == 0) ? 0 : 1); // number of used sectors by file
         uint16_t lastSectorOffset = usedDataSectorsNb - 1; // last sector offset
         
-        uint16_t lastUndirectSector = (fv6->i_node).i_addr[lastSectorOffset / ADDRESSES_PER_SECTOR]; // last indirect sector number in inode's addresses
+        uint16_t lastUndirectSectorIndex = lastSectorOffset / ADDRESSES_PER_SECTOR; // last indirect sector index in inode's addresses
         uint16_t lastDirectSector = inode_findsector(u, &(fv6->i_node), lastSectorOffset); // find last sector number
 
-        if(size % SECTOR_SIZE == 0) {
+        if(size % SECTOR_SIZE == 0) { // last direct sector full
 
-            if(size % (ADDRESSES_PER_SECTOR * SECTOR_SIZE) == 0) { // last direct and undirect sector full
+            if(size % (ADDRESSES_PER_SECTOR * SECTOR_SIZE) == 0) { // last undirect sector full
                 undirectSector = bm_find_next(u->fbm); // find next free undirect sector number
                 if(undirectSector < 0) { // no free sector
                     return undirectSector; // propagate error
@@ -220,8 +221,8 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
                 }
                 sector[directAddressIndex] = directSector;
 
-                (fv6->i_node).i_addr[undirectAddressIndex] = undirectSector; // add the next undirect sector number to the array
-            } else { // last direct sector full, but last undirect sector still not full
+                (fv6->i_node).i_addr[lastUndirectSectorIndex+1] = undirectSector; // add the next undirect sector number to the array
+            } else { // last undirect sector still not full
                 undirectSector = (fv6->i_node).i_addr[undirectAddressIndex]; // last undirect sector
                 error = sector_read(u->f, undirectSector, sector); // read undirect sector
                 if(error) { // error occured
