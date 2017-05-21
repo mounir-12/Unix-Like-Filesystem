@@ -39,10 +39,12 @@ int mountv6(const char *filename, struct unix_filesystem *u)
         uint64_t min_ibm = 2; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
         uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR - 1; // last inode
         u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
-
+        M_REQUIRE_NON_NULL(u->ibm); // require non NULL
+        
         uint64_t min_fbm = (u->s).s_block_start + 1; // data sectors start (ignoring first data sector known to be used)
         uint64_t max_fbm = (u->s).s_fsize-1; // data sectors end
         u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
+        M_REQUIRE_NON_NULL(u->fbm); // require non NULL
 
         fill_ibm(u);
         fill_fbm(u);
@@ -145,8 +147,9 @@ void fill_fbm(struct unix_filesystem *u)
                 }
 
                 uint32_t size = inode_getsize(&(inodes[i])); // file size
-                uint32_t smallFileMaxSize = (1 << 10) * 4; // small file is 4 * 2^10 bytes = 4 Kbytes
-                uint32_t largeFileMaxSize = (1 << 10) * 896; // large file is 896 * 2^10 bytes = 896 Kbytes
+				uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
+				uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
+				
                 if(size > smallFileMaxSize && size <= largeFileMaxSize) { // file is a large file
                     for(int j = 0; j < ADDR_SMALL_LENGTH; j++) { // iterate on indirect sector
                         int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
@@ -179,9 +182,9 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     memset(&s, 0, sizeof(struct superblock));
     
     // size is at least one block in case num_inodes not divisible by INODES_PER_SECTOR
-    s.s_isize = num_inodes / INODES_PER_SECTOR + (num_inodes % INODES_PER_SECTOR == 0 ? 0 : 1); // number of blocks containing inodes
+    s.s_isize = num_inodes / INODES_PER_SECTOR; // number of blocks containing inodes
     s.s_fsize = num_blocks; // total number of blocks
-
+    
     if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
         return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
     }
@@ -218,7 +221,7 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
             return writeError; // propagate error
         }
     }
-    for(uint16_t i = s.s_block_start; i < s.s_fsize ; i++) { // iterate on data blocks
+    for(uint16_t i = s.s_block_start; i < s.s_fsize + s.s_inode_start ; i++) { // iterate on data blocks
         char sector[SECTOR_SIZE]; // create sector
         memset(sector, 0, SECTOR_SIZE); // set sector to zero
         int writeError = sector_write(f, i, sector); //write sector
