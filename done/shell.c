@@ -302,8 +302,9 @@ int do_cat(char** args)
     if((file.i_node.i_mode & IFMT) == IFDIR) { // file is a directory
         return SHELL_CAT_ON_DIR; // return appropriate error code
     }
-
-    unsigned char data[inode_getsectorsize(&(file.i_node))]; // data of the file
+    int32_t sectorsSize = inode_getsectorsize(&(file.i_node)); // data sectors size + 1 for null character
+    unsigned char data[sectorsSize]; // data of the file
+    data[sectorsSize - 1] = '\0'; // null terminate the data
 
     int read = 0;
 
