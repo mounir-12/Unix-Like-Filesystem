@@ -264,11 +264,22 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(childInr < 0) { // couldn't allocate an inode
         return childInr; // propagate error
     }
+    
+    struct inode childInode; // child inode to be written
+    memset(&childInode, 0, sizeof(struct inode)); // set all values to zero
+    childInode.i_mode = mode; // correctly set the i_mode
+    error = inode_write(u, childInr, &childInode);
+    if(error) // error occured
+    {
+		return error; // propagate error
+	}
+
     struct filev6 fv6_parent;
     error = filev6_open(u, parentInr, &fv6_parent);
     if(error) { // error occured
         return error; // propagate error
     }
+    
     struct direntv6 childDir; // child direntv6
     childDir.d_inumber = childInr; // copy child inode number
     strncpy(childDir.d_name, child, DIRENT_MAXLEN); // copy child name
@@ -276,16 +287,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(error) { // error occured
         return error; // propagate error
     }
-
-    struct filev6 fv6_child; // child filev6
-    fv6_child.u = u; // initialize u of child filev6
-    fv6_child.i_number = childInr; // initialize inode number of child filev6
-    fv6_child.offset = 0; // initialize offset of child filev6
-    error = filev6_create(u, mode, &fv6_child); // register the child as a dir or fil, depending on mode
-    if(error) // error occured
-    {
-		return error; // propagate error
-	}
+    
     return 0;
 }
 

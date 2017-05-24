@@ -18,7 +18,7 @@ struct bmblock_array *bm_alloc(uint64_t min, uint64_t max)
         struct bmblock_array *a = malloc(sizeof(struct bmblock_array) + (nb-1)*sizeof(uint64_t) );
         if(a != NULL) {
             a->length = nb;
-            a->cursor = 0;
+            a->cursor = UINT64_C(0);
             a->min = min;
             a->max = max;
             return a;
@@ -73,19 +73,17 @@ void bm_clear(struct bmblock_array *bmblock_array, uint64_t x)
 int bm_find_next(struct bmblock_array *bmblock_array)
 {
     M_REQUIRE_NON_NULL(bmblock_array);
-    
-    bmblock_array->cursor = UINT64_C(0); // inital value
 
 	uint64_t bits = UINT64_C(-1);
 	
-	do
+	while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length) // loop while 64 bits bloc not found
 	{
 		bits = bmblock_array->bm[bmblock_array->cursor]; // read bits pointed by cursor
 		if(bits == UINT64_C(-1)) // bits are all ones
 		{
 			bmblock_array->cursor += 1; // next 64 bits bloc
 		}
-	}while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length); // loop while 64 bits bloc not found
+	}
 	
 	if(bmblock_array->cursor == bmblock_array->length) // no free element (all ones)
 	{
@@ -125,6 +123,6 @@ void bm_print(struct bmblock_array *bmblock_array)
             printf("\n");
         }
     }
-    printf("**********BitMap Block END**********\n");
+    printf("**********BitMap Block END************\n");
     fflush(stdout);
 }

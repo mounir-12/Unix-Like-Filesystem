@@ -151,7 +151,7 @@ void fill_fbm(struct unix_filesystem *u)
 				uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
 				
                 if(size > smallFileMaxSize && size <= largeFileMaxSize) { // file is a large file
-                    for(int j = 0; j < ADDR_SMALL_LENGTH; j++) { // iterate on indirect sector
+                    for(int j = 0; j < ADDR_SMALL_LENGTH-1; j++) { // iterate on indirect sector
                         int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
                         if(sectorNb > 0) {
                             bm_set(fbm, sectorNb); // update sector state to be used
@@ -181,14 +181,15 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     struct superblock s;
     memset(&s, 0, sizeof(struct superblock));
     
-    s.s_isize = num_inodes / INODES_PER_SECTOR + ((num_inodes % INODES_PER_SECTOR == 0) ? 0 : 1); // number of blocks containing inodes, minimum 1
+    s.s_inode_start = SUPERBLOCK_SECTOR + 1; // start of blocks containing inodes
+    
+    s.s_isize = (num_inodes / INODES_PER_SECTOR) + ((num_inodes % INODES_PER_SECTOR == 0) ? 0 : 1); // number of blocks containing inodes, minimum 1
+    s.s_block_start = s.s_inode_start + s.s_isize; // start of data blocks
     s.s_fsize = num_blocks; // total number of blocks
 
-    if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
+    if(s.s_fsize < s.s_isize + num_inodes) { // should have at least one block per inodes block + one block per inode created
         return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
     }
-    s.s_inode_start = SUPERBLOCK_SECTOR + 1;
-    s.s_block_start = s.s_inode_start + s.s_isize;
     
     FILE *f = fopen(filename,"w+b"); //open new file
     if(f == NULL) { // open error
@@ -220,15 +221,7 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
             return writeError; // propagate error
         }
     }
-    for(uint16_t i = s.s_block_start; i < s.s_fsize; i++) { // iterate on data blocks
-        char sector[SECTOR_SIZE]; // create sector
-        memset(sector, 0, SECTOR_SIZE); // set sector to zero
-        int writeError = sector_write(f, i, sector); //write sector
-        if(writeError) {
-			fclose(f); // close file
-            return writeError; // propagate error
-        }
-    }
+    
     if(!fclose(f)) { // closed
         return 0;
     } else { // error upon closing
