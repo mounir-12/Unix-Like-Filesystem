@@ -164,7 +164,7 @@ struct shell_map shell_cmds[] = {
     {"help", do_help, "display this help", 0, ""},
     {"exit", do_exit, "exit shell", 0, ""},
     {"quit", do_quit, "exit shell", 0, ""},
-    {"mkfs", do_mkfs, "create a new filesystem", 3, " <diskname> <#blocks> <#inodes>"},
+    {"mkfs", do_mkfs, "create a new filesystem", 3, " <diskname> <#inodes> <#blocks>"},
     {"mount", do_mount, "mount the provided filesystem", 1, " <diskname>"},
     {"mkdir", do_mkdir, "create a new directory", 1, " <dirname>"},
     {"lsall", do_lsall, "list all directories and files contained in the currently mounted filesystem", 0, ""},
@@ -391,12 +391,12 @@ int do_mkfs(char** args)
 {
     uint16_t num_blocks = 0; // number of blocks
     uint16_t num_inodes = 0; // number of inodes
-    int read = sscanf(args[1], "%hu", &num_blocks); // extract the number of blocks
+    int read = sscanf(args[1], "%hu", &num_inodes); // extract the number of inodes
     if(read != 1) { // error extracting
         return SHELL_INVALID_ARGS; // return appropriate error code
     }
 
-    read = sscanf(args[2], "%hu", &num_inodes); // extract number of inodes
+    read = sscanf(args[2], "%hu", &num_blocks); // extract number of blocks
     if(read != 1) { // error extracting
         return SHELL_INVALID_ARGS; // return appropriate error code
     }

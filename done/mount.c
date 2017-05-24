@@ -181,7 +181,7 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     struct superblock s;
     memset(&s, 0, sizeof(struct superblock));
     
-    s.s_isize = num_inodes / INODES_PER_SECTOR; // number of blocks containing inodes
+    s.s_isize = num_inodes / INODES_PER_SECTOR + ((num_inodes % INODES_PER_SECTOR == 0) ? 0 : 1); // number of blocks containing inodes, minimum 1
     s.s_fsize = num_blocks; // total number of blocks
 
     if(s.s_fsize < s.s_isize + num_inodes) { // not enough blocks
