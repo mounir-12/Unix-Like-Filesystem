@@ -90,9 +90,15 @@ int bm_find_next(struct bmblock_array *bmblock_array)
 		return ERR_BITMAP_FULL;
 	}
 	uint64_t x = bmblock_array->cursor * BITS_PER_VECTOR + bmblock_array->min; // first element in the found bloc of 64 bits
-	while(bm_get(bmblock_array, x) == 1)
+	int bit = bm_get(bmblock_array, x); // get corresponding bit
+	while(bit != 0) // if not unallocated
 	{
-		x++; // next element
+		if(bit < 0) // if not in range [min;max]
+		{
+			return ERR_BITMAP_FULL; // then bitmap is full
+		}
+		x++; // otherwise next element
+		bit = bm_get(bmblock_array, x); // get corresponding bit
 	}
     return x; // return first x with bit = 0
 }

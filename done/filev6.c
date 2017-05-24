@@ -27,8 +27,6 @@ int filev6_open(const struct unix_filesystem *u, uint16_t inr, struct filev6 *fv
     fv6->offset = 0;
 
     return 0;
-
-
 }
 
 int filev6_readblock(struct filev6 *fv6, void *buf)
@@ -267,7 +265,7 @@ int filev6_writesector(struct unix_filesystem *u, struct filev6 *fv6, const char
             uint32_t nextByteIndex = size % SECTOR_SIZE; // index inside the block of the next byte to be written to block
             memcpy(&(block[nextByteIndex]), &(buf[offset]), nb_bytes); // write subsequently nb_bytes to the block
         }
-
+        
         error = sector_write(u->f, directSector, block); // write direct sector
         if(error) { // an error occured
             return error; // propagate error
