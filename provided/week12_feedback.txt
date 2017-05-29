@@ -1,0 +1,139 @@
+Submission accepted
+
+stdout:
+making (our) test-inodes: 
+cc    -c -o test-core.o test-core.c
+cc    -c -o error.o error.c
+cc    -c -o bmblock.o bmblock.c
+cc    -c -o mount.o mount.c
+cc    -c -o sector.o sector.c
+cc    -c -o inode.o inode.c
+cc     test-inodes.c test-core.o error.o bmblock.o mount.o sector.o inode.o  -lcrypto -o test-inodes
+test-inodes done.
+making (our) test-file: 
+cc    -c -o filev6.o filev6.c
+cc    -c -o sha.o sha.c
+cc     test-file.c test-core.o error.o bmblock.o mount.o sector.o inode.o filev6.o sha.o  -lcrypto -o test-file
+test-file done.
+making (our) test-dirent: 
+cc    -c -o direntv6.o direntv6.c
+cc     test-dirent.c test-core.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o  -lcrypto -o test-dirent
+test-dirent done.
+making (our) test-bitmap: 
+cc     test-bitmap.c bmblock.o  -lcrypto -o test-bitmap
+test-bitmap done.
+=====
+testing our test-inodes on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-inodes on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-file on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-dirent on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-dirent on disk aiw.uv6: done.
+diff from reference:
+=====
+testing our test-bitmap on disk simple.uv6: done.
+diff from reference:
+=====
+testing our test-bitmap on disk aiw.uv6: done.
+diff from reference:
+=====
+making (your) shell: 
+cc    -c -o shell.o shell.c
+cc   shell.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o sha.o  -lcrypto -o shell
+cc    -c -D_DEFAULT_SOURCE $(pkg-config fuse --cflags) -o fs.o -c fs.c
+cc     -o fs fs.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o -lcrypto $(pkg-config fuse --libs)
+cc     test-mount.c test-core.o error.o bmblock.o mount.o sector.o inode.o  -lcrypto -o test-mount
+cc     test-write.c test-core.o error.o bmblock.o mount.o sector.o inode.o filev6.o  -lcrypto -o test-write
+shell done.
+testing your shell: 
+done.
+diff from reference:
+80d79
+< DIR /tmp/
+92,100c91
+< >>> **********FS INODE START**********
+< i_mode: 49152
+< i_nlink: 0
+< i_uid: 0
+< i_gid: 0
+< i_size0: 0
+< i_size1: 0
+< size: 0
+< **********FS INODE END**********
+---
+> >>> ERROR FS: unallocated inode
+404,405c395
+< >>> ERROR FS: IO error: No such file or directory
+< >>> DIR /
+---
+> >>> >>> DIR /
+406a397
+> FIL /tmp/abcd.txt
+409,411c400,442
+< >>> ERROR FS: inode out of range
+< >>> ERROR FS: unallocated inode
+< >>> ERROR FS: inode out of range
+---
+> >>> inode: 3
+> >>> **********FS INODE START**********
+> i_mode: 32768
+> i_nlink: 0
+> i_uid: 0
+> i_gid: 0
+> i_size0: 0
+> i_size1: 616
+> size: 616 
+> **********FS INODE END**********
+> >>> lsall
+> mount bidon142857.
+> mount /home/whitlock/pps/Dev2017/mainprj/disks/simple.uv6
+> lsall
+> cat /tmp/coucou.txt
+> istat 2
+> istat 3
+> inode /tmp
+> inode /tmp/coucou.txt
+> psb
+> help
+> sha /tmp/coucou.txt
+> mount /home/whitlock/pps/Dev2017/mainprj/disks/aiw.uv6
+> lsall
+> sha /books/aiw/full/11-0.txt
+> inode /books/aiw/by_chapters/11-0-c11.txt
+> istat 19
+> istat 22
+> cat /books/aiw/by_chapters/11-0-c08.txt
+> mkfs bidon 128 1024
+> mount bidon
+> lsall
+> mkdir /tmp
+> lsall
+> add shell_cmd.txt /tmp/abcd.txt
+> lsall
+> inode /
+> inode /tmp
+> inode /tmp/abcd.txt
+> istat 3
+> cat /tmp/abcd.txt
+> quit
+> 
+
+=====
+testing mkfs: ERROR: Disk "bidon" does not have the right size (7680 bytes)
+=====
+making (your) fs: 
+cc     -o fs fs.o error.o sector.o bmblock.o mount.o inode.o filev6.o direntv6.o -lcrypto $(pkg-config fuse --libs)
+fs done.
+
+-----
+stderr:
