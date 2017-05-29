@@ -58,28 +58,14 @@ shell done.
 testing your shell: 
 done.
 diff from reference:
-80d79
-< DIR /tmp/
-92,100c91
-< >>> **********FS INODE START**********
-< i_mode: 49152
-< i_nlink: 0
-< i_uid: 0
-< i_gid: 0
-< i_size0: 0
-< i_size1: 0
-< size: 0
-< **********FS INODE END**********
----
-> >>> ERROR FS: unallocated inode
-404,405c395
+395,396c395
 < >>> ERROR FS: IO error: No such file or directory
 < >>> DIR /
 ---
 > >>> >>> DIR /
-406a397
+397a397
 > FIL /tmp/abcd.txt
-409,411c400,442
+400,402c400,442
 < >>> ERROR FS: inode out of range
 < >>> ERROR FS: unallocated inode
 < >>> ERROR FS: inode out of range
