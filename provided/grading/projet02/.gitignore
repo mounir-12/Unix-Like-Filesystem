@@ -1,0 +1,6 @@
+*.o
+shell
+test-file
+test-core
+test-dirent
+test-inodes
