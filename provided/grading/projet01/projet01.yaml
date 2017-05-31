@@ -43,5 +43,5 @@
 - test-dirent.c:  2 #[error propagation] # max 2.5
 - test-file.c:    5 #[format] # max 5
 - test-inodes.c:  2.5 # max 2.5
-- style:        1 # -1 magic # max 2
+- style:       -1 # -1 magic # max 2
 - bonus/malus: -2.5 # -1.5 -1 bof # max 5, min -5
