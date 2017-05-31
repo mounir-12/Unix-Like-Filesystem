@@ -1,0 +1,134 @@
+bmblock.h:
+7d6
+<  * @author Edouard Bugnion
+11d9
+< #include <stddef.h> // for size_t
+26c24
+<  * between min and max (included, thus (max-min+1) elements).
+---
+>  * between min and may (included, thus (max-min+1) elements).
+
+
+unixv6fs.h:
+19d18
+<  * @author original UNIX v6 team + Mendel Rosenblum (Stanford) + Edouard Bugnion
+202,204c201,209
+<     /* TODO WEEK 04:
+<      * la première chose à faire est de définir cette structure.
+<      */
+---
+> 	uint16_t	i_mode;			/* contains different informations on the inode */
+> 	uint8_t		i_nlink;		/* not used */
+> 	uint8_t		i_uid;			/* file proprietary identifier (not used) */
+> 	uint8_t		i_gid;			/* file group identifier (not used) */
+> 	uint8_t		i_size0;		/* represents the most significant bits of the size of the file */
+> 	uint16_t	i_size1;		/* represents the least significant bits of the size of the file */
+> 	uint16_t	i_addr[ADDR_SMALL_LENGTH];		/* contains the sector number where the file content is stored */
+> 	uint16_t	i_atime[2];		/* last access date (not used) */
+> 	uint16_t	i_mtime[2];		/* last modification date (not used) */
+
+
+mount.h:
+7d6
+<  * @author Edouard Bugnion
+46a46,48
+> /*
+>  * staff only; students will not have to implement
+>  */
+
+
+error.h:
+7d6
+<  * @author Edouard Bugnion
+
+
+inode.h:
+7d6
+<  * @author Edouard Bugnion
+108c107
+< int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *inode);
+---
+> int inode_write(struct unix_filesystem *u, uint16_t inr, struct inode *inode);
+
+
+sector.h:
+7d6
+<  * @author Edouard Bugnion
+31c30
+<  * @brief write one 512-byte sector from the virtual disk
+---
+>  * @brief read one 512-byte sector from the virtual disk
+37c36
+< int sector_write(FILE *f, uint32_t sector, const void *data);
+---
+> int sector_write(FILE *f, uint32_t sector, void  *data);
+
+
+direntv6.h:
+7d6
+<  * @author Edouard Bugnion
+21,23c20,24
+<     /* TODO WEEK 06:
+<      * définir cette structure.
+<      */
+---
+>     
+>     struct filev6 fv6; // represents the directory to read (current directory)
+>     struct direntv6 dirs[DIRENTRIES_PER_SECTOR]; // array content of the current directory's children (a child can be a file or a directory)
+>     int cur; // current child (which is the last visited child)
+>     int last; // last child read from disk
+38c39
+<  * @param d the directory reader
+---
+>  * @param d the dierctory reader
+46c47
+<  * @brief debugging routine; print a subtree (note: recursive)
+---
+>  * @brief debugging routine; print the a subtree (note: recursive)
+57,58c58,59
+<  * @param inr the root of the subtree
+<  * @param entry the pathname relative to the subtree
+---
+>  * @param inr the current of the subtree
+>  * @param entry the prefix to the subtree
+
+
+filev6.h:
+7d6
+<  * @author Edouard Bugnion
+26c25
+<  * @brief open the file corresponding to a given inode; set offset to zero
+---
+>  * @brief open up a file corresponding to a given inode; set offset to zero
+28c27
+<  * @param inr the inode number (IN)
+---
+>  * @param inr he inode number (IN)
+30c29
+<  * @return 0 on success; the appropriate error code (<0) on error
+---
+>  * @return 0 on success; <0 on errror
+46,47c45
+<  * @return >0: the number of bytes of the file read; 0: end of file;
+<  *             the appropriate error code (<0) on error
+---
+>  * @return >0: the number of bytes of the file read; 0: end of file; <0 error
+68c66
+< int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, const void *buf, int len);
+---
+> int filev6_writebytes(struct unix_filesystem *u, struct filev6 *fv6, void *buf, int len);
+
+
+sha.h:
+7d6
+<  * @author Aurélien Soccard
+28c27
+<  * @param inode the inode of which we want to print the content
+---
+>  * @param inode the inocde of which we want to print the content
+
+
+test-core.c:
+5d4
+<  * @author Aurélien Soccard & Jean-Cédric Chappelier
+
