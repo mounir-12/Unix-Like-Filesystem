@@ -13,17 +13,16 @@ int filev6_open(const struct unix_filesystem *u, uint16_t inr, struct filev6 *fv
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(fv6);
 
-    struct inode n;
-    int error = inode_read(u, inr, &n); // read inode
+    // initialise file inode
+    int error = inode_read(u, inr, &(fv6->i_node)); // read inode
 
     if(error) { // error occured
         return error; // propagate error
     }
 
-    // initialise file
+    // initialise other file attributes
     fv6->u = u;
     fv6->i_number = inr;
-    fv6->i_node = n;
     fv6->offset = 0;
 
     return 0;
@@ -76,7 +75,7 @@ int filev6_lseek(struct filev6 *fv6, int32_t offset)
         return ERR_OFFSET_OUT_OF_RANGE; // return error
     }
 
-    fv6->offset = offset;
+    fv6->offset = offset; // change offset
     return 0;
 }
 
@@ -93,15 +92,13 @@ int filev6_create(struct unix_filesystem *u, uint16_t mode, struct filev6 *fv6)
         return ERR_UNALLOCATED_INODE; // return appropriate error code
     }
 
-    struct inode i; // inode to be written
-    memset(&i, 0, sizeof(struct inode)); // set all values to zero
-    i.i_mode = mode; // correctly set the i_mode
+    memset(&(fv6->i_node), 0, sizeof(struct inode)); // set all values to zero
+    (fv6->i_node).i_mode = mode; // correctly set the i_mode
 
-    int error = inode_write(u, fv6->i_number, &i); // write the inode
+    int error = inode_write(u, fv6->i_number, &(fv6->i_node)); // write the inode
     if(error) { // error occured
         return error; // propagate error
     }
-    fv6->i_node = i; // set the inode
 
     return 0;
 }

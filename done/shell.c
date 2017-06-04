@@ -41,91 +41,91 @@ struct shell_map {
 /**
  * @brief exits the shell
  * @param args not used
- * @return 0 on success; >0 on error
+ * @return 0 on success; <0 on error
  */
 int do_exit(char** args);
 
 /**
  * @brief quits the shell
  * @param args not used
- * @return 0 on success; >0 on error
+ * @return 0 on success; <0 on error
  */
 int do_quit(char** args);
 
 /**
  * @brief prints all supported commands with their description
  * @param args not used
- * @return 0 on success; >0 on error
+ * @return 0
  */
 int do_help(char** args);
 
 /**
  * @brief mounts the disk
  * @param args path of the disk to be mounted
- * @return 0 on success; >0 on error
+ * @return 0 on success; <0 on error
  */
 int do_mount(char** args);
 
 /**
  * @brief lists all files and directories in the mounted filesystem
  * @param args not used
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_lsall(char** args);
 
 /**
  * @brief prints the superblock of the mounted filesystem
  * @param args not used
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_psb(char** args);
 
 /**
  * @brief prints content of the file
  * @param args absolute path of the file in the mounted disk
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_cat(char** args);
 
 /**
  * @brief prints inode number and sha of the content of the file
  * @param args absolute path of the file in the mounted disk
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_sha(char** args);
 
 /**
  * @brief prints inode number of the file or directory
  * @param args absolute path of the file or directory in the mounted disk
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_inode(char** args);
 
 /**
  * @brief reads and prints the inode of the inode number
  * @param args inode number
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_istat(char** args);
 
 /**
  * @brief create a new unix filesystem
  * @param args disk name - number of sectors - numbers of inodes
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_mkfs(char** args);
 
 /**
  * @brief creates a new directory in the mounted unix filesystem
  * @param args directory name
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_mkdir(char** args);
 
 /**
  * @brief adds a local file to the mounted unix filesystem
  * @param args name of the local file - name of the destination file in the mounted disk
- * @return 0 on success; >0 on error
+ * @return 0 on success; >0 or <0 on error
  */
 int do_add(char** args);
 
@@ -133,7 +133,7 @@ int do_add(char** args);
  * @brief tokenizes the input using the character ' ' (space)
  * @param input the input to tokenise (IN)
  * @param tokenized the tokenized input (OUT)
- * @return 0 on success; >0 on error
+ * @return 0 on success; <0 on error
  */
 int tokenize_input(char* input, char** tokenized);
 
@@ -219,7 +219,7 @@ int main(void)
 
 int do_exit(char** args)
 {
-    if(u.f !=NULL) { // already mounted
+    if(u.f != NULL) { // already mounted
         int error = umountv6(&u); // unmount
         if(error) { // error unmounting
             return error; // propagate error
@@ -247,7 +247,12 @@ int do_help(char** args)
 int do_mount(char** args)
 {
     M_REQUIRE_NON_NULL(args);
-
+    if(u.f != NULL) { // already mounted
+        int error = umountv6(&u); // unmount
+        if(error) { // error unmounting
+            return error; // propagate error
+        }
+    }
     int error = mountv6(args[0],&u); // mount the filesystem
     if(error) { // error occured while mounting
         u.f = NULL; // file is NULL (not mounted yet)
@@ -299,21 +304,27 @@ int do_cat(char** args)
         return error; // propagate error
     }
 
+    if(!((file.i_node).i_mode & IALLOC)) { // unallocated inode
+        return ERR_UNALLOCATED_INODE;
+    }
+
     if((file.i_node.i_mode & IFMT) == IFDIR) { // file is a directory
         return SHELL_CAT_ON_DIR; // return appropriate error code
     }
     int32_t sectorsSize = inode_getsectorsize(&(file.i_node)); // data sectors size + 1 for null character
     unsigned char data[sectorsSize]; // data of the file
-    data[sectorsSize - 1] = '\0'; // null terminate the data
 
     int read = 0;
 
     // read the whole file
     do {
         read = filev6_readblock(&file, &(data[file.offset]));
-
+        if(read < 0) {
+            return read;
+        }
     } while(read > 0);
 
+    data[sectorsSize - 1] = '\0'; // null terminate the data
     // print read content
     printf("%s\n", data);
 
@@ -389,6 +400,8 @@ int do_istat(char** args)
 
 int do_mkfs(char** args)
 {
+    M_REQUIRE_NON_NULL(args);
+
     uint16_t num_blocks = 0; // number of blocks
     uint16_t num_inodes = 0; // number of inodes
     int read = sscanf(args[1], "%hu", &num_inodes); // extract the number of inodes
@@ -462,6 +475,10 @@ int do_add(char** args)
     }
     fread(data, sizeof(uint8_t), size, file); // read the whole file
     int fileInr = direntv6_dirlookup(&u, ROOT_INUMBER, args[1]); // search inode number of new file
+    if(fileInr < 0) { // not found
+        fclose(file);
+        return fileInr; // propagate error
+    }
     struct filev6 newFile; // filev6 for the new file
     error = filev6_open(&u, fileInr, &newFile); // open filev6
     if(error) { // error occured

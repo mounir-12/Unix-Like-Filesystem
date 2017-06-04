@@ -26,7 +26,7 @@ void print_sha_from_content(const unsigned char *content, size_t length)
     unsigned char codedData[SHA256_DIGEST_LENGTH]; // array length is length of SHA256
     SHA256(content, length, codedData);
 
-    char sha_string[2 * SHA256_DIGEST_LENGTH]; // array length is length of SHA256 * 2
+    char sha_string[2 * SHA256_DIGEST_LENGTH + 1]; // array length is length of SHA256 * 2 (+ 1 for '\0')
     sha_to_string(codedData, sha_string);
     printf("%s\n", sha_string); // print SHA256
 }
@@ -43,15 +43,24 @@ void print_sha_inode(struct unix_filesystem *u, struct inode inode, int inr)
             printf("no SHA for directories.\n");
         } else {
             struct filev6 fv6;
-            filev6_open(u, inr, &fv6);
+            int error = filev6_open(u, inr, &fv6);
+            if(error) { // error occured
+                return; // return
+            }
 
-            unsigned char data[inode_getsectorsize(&inode)];
+            int32_t size = inode_getsectorsize(&inode);
+
+            unsigned char data[size];
 
             int read = 0;
 
             do {
                 read = filev6_readblock(&fv6, &(data[fv6.offset]));
+                if(read < 0) { // error occured
+                    return; // return
+                }
             } while(read > 0);
+            data[size - 1] = '\0'; // null terminate
             print_sha_from_content(data, inode_getsize(&inode));
         }
     }

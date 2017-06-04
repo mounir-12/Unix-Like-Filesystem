@@ -97,7 +97,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
         int read = 0;
 
-        // Iterate on all childs of the current directory
+        // Iterate on all children of the current directory
         do {
             char childName[DIRENT_MAXLEN+1];
             uint16_t child_inr;
@@ -109,7 +109,7 @@ int direntv6_print_tree(const struct unix_filesystem *u, uint16_t inr, const cha
 
                 size_t prefixSize = strlen(prefix);
                 size_t childNameSize = strlen(childName);
-                char newPrefix[prefixSize + childNameSize + 1];
+                char newPrefix[prefixSize + childNameSize + 2]; // + 2 because one char for '/' and one char for '\0'
 
 
                 snprintf(newPrefix,MAXPATHLEN_UV6, "%s%s%s", prefix, "/", childName); // generate newPrefix
@@ -134,8 +134,10 @@ int direntv6_dirlookup(const struct unix_filesystem *u, uint16_t inr, const char
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
 
-    char entryCopy[strlen(entry)]; // copy which is non const
-    sprintf(entryCopy, "%s", entry); // copy content
+    size_t length = strlen(entry); // length of entry
+    char entryCopy[length+1]; // create copy which is non const
+    strncpy(entryCopy, entry, length); // copy content
+    entryCopy[length] = '\0'; // null terminate the string
 
     return direntv6_dirlookup_core(u, inr, entryCopy, strlen(entryCopy));
 }
@@ -166,7 +168,7 @@ int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char 
     }
 
     int read = 0;
-    // Iterate on all childs of the current directory
+    // Iterate on all children of the current directory
     do {
         char childName[DIRENT_MAXLEN+1]; // child name
         uint16_t child_inr; // child inode
@@ -176,8 +178,8 @@ int direntv6_dirlookup_core(const struct unix_filesystem *u, uint16_t inr, char 
         if(read < 0) { // error occured while reading child
             return read; // propagate error
         } else if(read > 0) { // succefully read child
-            if(strcmp(entry, childName) == 0) { // found the searched subdir or fil
-                return direntv6_dirlookup_core(u, child_inr, nextEntry, strlen(nextEntry)); //
+            if(strncmp(entry, childName, DIRENT_MAXLEN) == 0) { // found the searched subdir or fil
+                return direntv6_dirlookup_core(u, child_inr, nextEntry, strlen(nextEntry)); // continue searching in the path
             }
         }
 
@@ -201,8 +203,10 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
         return direntv6_create(u, entry+1, mode); // ignore it
     }
     // entry begins with a character != '/'
-    char entryCopy[strlen(entry)]; // create a copy of entry which is non const
-    sprintf(entryCopy, "%s", entry); // copy content
+    size_t length = strlen(entry); // length of entry
+    char entryCopy[length+1]; // create copy which is non const
+    strncpy(entryCopy, entry, length); // copy content
+    entryCopy[length] = '\0'; // null terminate the string
 
     size_t entrySize = strlen(entryCopy); // size of copy
     while(entryCopy[entrySize-1] == '/') { // entryCopy ends with a '/'
@@ -249,7 +253,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
         if(read < 0) { // error occured while reading child
             return read; // propagate error
         } else if(read > 0) { // succefully read child
-            if(strcmp(child, childName) == 0) { // child already exists
+            if(strncmp(child, childName, DIRENT_MAXLEN) == 0) { // child already exists
                 return ERR_FILENAME_ALREADY_EXISTS; // return error
             }
         }
@@ -265,7 +269,7 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     struct inode childInode; // child inode to be written
     memset(&childInode, 0, sizeof(struct inode)); // set all values to zero
     childInode.i_mode = mode; // correctly set the i_mode
-    error = inode_write(u, childInr, &childInode);
+    error = inode_write(u, childInr, &childInode); // write child
     if(error) { // error occured
         return error; // propagate error
     }

@@ -36,7 +36,7 @@ int inode_scan_print(const struct unix_filesystem *u)
                     printf("(%s) ", SHORT_FIL_NAME);
                 }
 
-                printf("len %4" PRIu32"\n", inode_getsize(&inodes[i])); // call inode_getsize with pointer to current inode
+                printf("len %4" PRIu32 "\n", inode_getsize(&inodes[i])); // call inode_getsize with pointer to current inode
                 fflush(stdout);
             }
         }
@@ -56,7 +56,7 @@ void inode_print(const struct inode *inode)
         printf("i_gid: %u\n",inode->i_gid);
         printf("i_size0: %u\n",inode->i_size0);
         printf("i_size1: %u\n",inode->i_size1);
-        printf("size: %u\n",inode_getsize(inode));
+        printf("size: %d\n",inode_getsize(inode));
     }
     printf("**********FS INODE END**********\n");
     fflush(stdout);
@@ -73,13 +73,13 @@ int inode_read(const struct unix_filesystem *u, uint16_t inr, struct inode *inod
 
     uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1; // last valid inode number
 
-    if( !(inr >=0 && inr<=maxInodeNb)) { // if not in the range [0; maxInodeNb]
+    if(inr > maxInodeNb) { // if not in the range [0; maxInodeNb]
         return ERR_INODE_OUTOF_RANGE; // return approriate error code
     }
 
     // read sector
     struct inode inodes[INODES_PER_SECTOR];
-    uint32_t sectorNb = (inr - (inr % INODES_PER_SECTOR)) / INODES_PER_SECTOR; // sector number for inode inr
+    uint32_t sectorNb = inr / INODES_PER_SECTOR; // sector number for inode inr
 
     int error = sector_read(u->f, start + sectorNb, inodes);
     /* an error occured while trying to read sector */
@@ -154,13 +154,13 @@ int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *ino
 
     uint32_t maxInodeNb = INODES_PER_SECTOR * size - 1; // last valid inode number
 
-    if( !(inr >=0 && inr<=maxInodeNb)) { // if not in the range [0; maxInodeNb]
+    if(inr > maxInodeNb) { // if not in the range [0; maxInodeNb]
         return ERR_INODE_OUTOF_RANGE; // return approriate error code
     }
 
     // read sector
     struct inode inodes[INODES_PER_SECTOR];
-    uint32_t sectorNb = (inr - (inr % INODES_PER_SECTOR)) / INODES_PER_SECTOR; // sector number for inode inr
+    uint32_t sectorNb = inr / INODES_PER_SECTOR; // sector number for inode inr
 
     int readError = sector_read(u->f, start + sectorNb, inodes);
 

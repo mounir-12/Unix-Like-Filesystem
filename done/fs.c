@@ -60,8 +60,8 @@ static int fs_getattr(const char *path, struct stat *stbuf)
     stbuf->st_uid = i.i_uid; // i_uid
     stbuf->st_gid = i.i_gid; // i_gid
     stbuf->st_size = inode_getsize(&i);
-    stbuf->st_blksize = 512; // size of a block is 512 bytes
-    stbuf->st_blocks = inode_getsize(&i) / 512; // number of full blocks in the inode
+    stbuf->st_blksize = SECTOR_SIZE; // size of a block
+    stbuf->st_blocks = inode_getsize(&i) / SECTOR_SIZE; // number of full blocks in the inode
 
     if (i.i_mode & IFDIR) { // inode is a directory
         stbuf->st_mode = S_IFDIR | stbuf->st_mode;
@@ -157,7 +157,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
         return 0; // return 0 to signal error (no byte read to buf)
     }
 
-    size_t blocksToRead = size / SECTOR_SIZE; // in order to always read block by block
+    size_t blocksToRead = size / SECTOR_SIZE + (size < SECTOR_SIZE ? 0 : 1); // to always read block by block, 1 if have to read less than one block
     size_t bytesToRead = blocksToRead * SECTOR_SIZE; // number of bytes to read
     unsigned char data[bytesToRead]; // data of the file
 
@@ -171,6 +171,9 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
         }
         dataOffset += read; // otherwise, increment offset by the number of bytes read
 
+    }
+    if(dataOffset > size) { // read more bytes then permitted
+        dataOffset = size; // offset is max size
     }
 
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf

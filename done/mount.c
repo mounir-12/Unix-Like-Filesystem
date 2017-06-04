@@ -7,6 +7,7 @@
 #include "inode.h"
 #include <string.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 void fill_ibm(struct unix_filesystem *u);
 void fill_fbm(struct unix_filesystem *u);
@@ -46,8 +47,8 @@ int mountv6(const char *filename, struct unix_filesystem *u)
         u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
         M_REQUIRE_NON_NULL(u->fbm); // require non NULL
 
-        fill_ibm(u);
-        fill_fbm(u);
+        fill_ibm(u); // fill bitmap vector
+        fill_fbm(u); // fill bitmap vector
 
         return 0;
     }
@@ -82,6 +83,9 @@ int umountv6(struct unix_filesystem *u)
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(u->f);
     if(!fclose(u->f)) { // closed
+        free(u->fbm); // free allocated space
+        free(u->ibm); // free allocated space
+        u->f = NULL; // init f
         return 0;
     } else { // error upon closing
         return ERR_IO;
