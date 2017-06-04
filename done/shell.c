@@ -444,14 +444,22 @@ int do_add(char** args)
         fclose(file);
         return error; // propagate error
     }
-    fseek(file, 0, SEEK_END); // go to end of file
+    error = fseek(file, 0, SEEK_END); // go to end of file
+    if(error) { // error occured
+        fclose(file);
+        return ERR_IO; // return error
+    }
     int size = ftell(file); // get file size
     if(size < 0) { // error occured
         fclose(file);
         return ERR_IO; // propagate error
     }
     uint8_t data[size]; // buffer to contain the file data
-    fseek(file, 0, SEEK_SET); // seek the beginning of file
+    error = fseek(file, 0, SEEK_SET); // seek the beginning of file
+    if(error) { // error occured
+        fclose(file);
+        return ERR_IO; // return error
+    }
     fread(data, sizeof(uint8_t), size, file); // read the whole file
     int fileInr = direntv6_dirlookup(&u, ROOT_INUMBER, args[1]); // search inode number of new file
     struct filev6 newFile; // filev6 for the new file
@@ -523,4 +531,3 @@ void handle_error(int error)
         printf("\n");
     }
 }
-
