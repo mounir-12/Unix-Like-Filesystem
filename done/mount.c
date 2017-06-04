@@ -36,11 +36,11 @@ int mountv6(const char *filename, struct unix_filesystem *u)
             return error; // propagate error
         }
 
-        uint64_t min_ibm = 2; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
+        uint64_t min_ibm = ROOT_INUMBER + 1; // first inode (ignoring first two since inode 0 is not used and inode 1 is known to be allocated)
         uint64_t max_ibm = (u->s).s_isize * INODES_PER_SECTOR - 1; // last inode
         u->ibm = bm_alloc(min_ibm, max_ibm); // allocate inode sectors bitmaps
         M_REQUIRE_NON_NULL(u->ibm); // require non NULL
-        
+
         uint64_t min_fbm = (u->s).s_block_start + 1; // data sectors start (ignoring first data sector known to be used)
         uint64_t max_fbm = (u->s).s_fsize-1; // data sectors end
         u->fbm = bm_alloc(min_fbm, max_fbm); // allocate data sectors bitmaps
@@ -80,6 +80,7 @@ void mountv6_print_superblock(const struct unix_filesystem *u)
 int umountv6(struct unix_filesystem *u)
 {
     M_REQUIRE_NON_NULL(u);
+    M_REQUIRE_NON_NULL(u->f);
     if(!fclose(u->f)) { // closed
         return 0;
     } else { // error upon closing
@@ -147,9 +148,9 @@ void fill_fbm(struct unix_filesystem *u)
                 }
 
                 uint32_t size = inode_getsize(&(inodes[i])); // file size
-				uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
-				uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
-				
+                uint32_t smallFileMaxSize = ADDR_SMALL_LENGTH * SECTOR_SIZE; // small file is 8 * 512 bytes = 4 Kbytes
+                uint32_t largeFileMaxSize = (ADDR_SMALL_LENGTH - 1) * ADDRESSES_PER_SECTOR * SECTOR_SIZE; // large file is 7 * 256 * 512 bytes = 896 Kbytes
+
                 if(size > smallFileMaxSize && size <= largeFileMaxSize) { // file is a large file
                     for(int j = 0; j < ADDR_SMALL_LENGTH-1; j++) { // iterate on indirect sector
                         int sectorNb = inodes[i].i_addr[j]; // get indirect sector numbers
@@ -176,13 +177,13 @@ void fill_fbm(struct unix_filesystem *u)
 
 int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
 {
-	M_REQUIRE_NON_NULL(filename);
-	
+    M_REQUIRE_NON_NULL(filename);
+
     struct superblock s;
     memset(&s, 0, sizeof(struct superblock));
-    
+
     s.s_inode_start = SUPERBLOCK_SECTOR + 1; // start of blocks containing inodes
-    
+
     s.s_isize = (num_inodes / INODES_PER_SECTOR) + ((num_inodes % INODES_PER_SECTOR == 0) ? 0 : 1); // number of blocks containing inodes, minimum 1
     s.s_block_start = s.s_inode_start + s.s_isize; // start of data blocks
     s.s_fsize = num_blocks; // total number of blocks
@@ -190,7 +191,7 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     if(s.s_fsize < s.s_isize + num_inodes) { // should have at least one block per inodes block + one block per inode created
         return ERR_NOT_ENOUGH_BLOCS; // return appropriate error code
     }
-    
+
     FILE *f = fopen(filename,"w+b"); //open new file
     if(f == NULL) { // open error
         return ERR_IO; // return appropriate error code
@@ -199,13 +200,13 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
     bootBlock[BOOTBLOCK_MAGIC_NUM_OFFSET] = BOOTBLOCK_MAGIC_NUM; // set magic number
     int bootBlockError = sector_write(f, BOOTBLOCK_SECTOR, bootBlock); //write boot block sector
     if(bootBlockError) { //error occured while trying to write the boot block sector
-		fclose(f); // close file
+        fclose(f); // close file
         return bootBlockError; // propagate error
     }
 
     int superblockError = sector_write(f, SUPERBLOCK_SECTOR, &s); //write superblock sector
     if(superblockError) { //error occured while trying to write the superblock sector
-		fclose(f); // close file
+        fclose(f); // close file
         return superblockError; // propagate error
     }
 
@@ -217,11 +218,11 @@ int mountv6_mkfs(const char *filename, uint16_t num_blocks, uint16_t num_inodes)
         }
         int writeError = sector_write(f, i, inodes); //write the modified array to appropriate sector
         if(writeError) {
-			fclose(f); // close file
+            fclose(f); // close file
             return writeError; // propagate error
         }
     }
-    
+
     if(!fclose(f)) { // closed
         return 0;
     } else { // error upon closing

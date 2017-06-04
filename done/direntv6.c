@@ -193,25 +193,22 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     // check for non NULL arguments
     M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(entry);
-    
-    if(strlen(entry) == 0) // no name so refers to ROOT
-    {
-		return ERR_FILENAME_ALREADY_EXISTS; // return error
-	}
-    if(entry[0] == '/') // if starts with a '/'
-    {
-		return direntv6_create(u, entry+1, mode); // ignore it
-	}
-	// entry begins with a character != '/'
+
+    if(strlen(entry) == 0) { // no name so refers to ROOT
+        return ERR_FILENAME_ALREADY_EXISTS; // return error
+    }
+    if(entry[0] == '/') { // if starts with a '/'
+        return direntv6_create(u, entry+1, mode); // ignore it
+    }
+    // entry begins with a character != '/'
     char entryCopy[strlen(entry)]; // create a copy of entry which is non const
     sprintf(entryCopy, "%s", entry); // copy content
-    
+
     size_t entrySize = strlen(entryCopy); // size of copy
-    while(entryCopy[entrySize-1] == '/') // entryCopy ends with a '/'
-    {
-		entryCopy[entrySize-1] = '\0'; // remove the '/'
-		entrySize--; // decrement size
-	}
+    while(entryCopy[entrySize-1] == '/') { // entryCopy ends with a '/'
+        entryCopy[entrySize-1] = '\0'; // remove the '/'
+        entrySize--; // decrement size
+    }
 
     const char* child = NULL; // child name relative to parent
     const char* parent = NULL; // parent name
@@ -264,22 +261,21 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(childInr < 0) { // couldn't allocate an inode
         return childInr; // propagate error
     }
-    
+
     struct inode childInode; // child inode to be written
     memset(&childInode, 0, sizeof(struct inode)); // set all values to zero
     childInode.i_mode = mode; // correctly set the i_mode
     error = inode_write(u, childInr, &childInode);
-    if(error) // error occured
-    {
-		return error; // propagate error
-	}
+    if(error) { // error occured
+        return error; // propagate error
+    }
 
     struct filev6 fv6_parent;
     error = filev6_open(u, parentInr, &fv6_parent);
     if(error) { // error occured
         return error; // propagate error
     }
-    
+
     struct direntv6 childDir; // child direntv6
     childDir.d_inumber = childInr; // copy child inode number
     strncpy(childDir.d_name, child, DIRENT_MAXLEN); // copy child name
@@ -287,7 +283,6 @@ int direntv6_create(struct unix_filesystem *u, const char *entry, uint16_t mode)
     if(error) { // error occured
         return error; // propagate error
     }
-    
+
     return 0;
 }
-

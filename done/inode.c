@@ -146,9 +146,9 @@ int inode_findsector(const struct unix_filesystem *u, const struct inode *i, int
 
 int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *inode)
 {
-	M_REQUIRE_NON_NULL(u);
+    M_REQUIRE_NON_NULL(u);
     M_REQUIRE_NON_NULL(inode);
-    
+
     uint16_t start = (u->s).s_inode_start;	// first sector containing an inode
     uint16_t size = (u->s).s_isize; // number of sectors containing inodes
 
@@ -157,48 +157,46 @@ int inode_write(struct unix_filesystem *u, uint16_t inr, const struct inode *ino
     if( !(inr >=0 && inr<=maxInodeNb)) { // if not in the range [0; maxInodeNb]
         return ERR_INODE_OUTOF_RANGE; // return approriate error code
     }
-    
+
     // read sector
     struct inode inodes[INODES_PER_SECTOR];
     uint32_t sectorNb = (inr - (inr % INODES_PER_SECTOR)) / INODES_PER_SECTOR; // sector number for inode inr
 
     int readError = sector_read(u->f, start + sectorNb, inodes);
-    
+
     if(readError) {// an error occured while trying to read sector
         return readError; // return approriate error code
     }
-    
+
     int i = inr % INODES_PER_SECTOR; // index of inode inr in inodes array
 
     inodes[i] = *inode; //write the inode in the array
-	
+
     int writeError = sector_write(u->f, start + sectorNb, inodes); //write the modified array to appropriate sector
-    
+
     return writeError;
 }
 
 int inode_alloc(struct unix_filesystem *u)
 {
-	int freeInode = bm_find_next(u->ibm); // find next unallocated inode number
-	if(freeInode < 0) // no free inode found
-	{
-		return ERR_NOMEM; // return appropriate error code
-	}
-	
-	bm_set(u->ibm, freeInode); // set the bit (inode is now allocated)
-	return freeInode; // return the inode number
+    int freeInode = bm_find_next(u->ibm); // find next unallocated inode number
+    if(freeInode < 0) { // no free inode found
+        return ERR_NOMEM; // return appropriate error code
+    }
+
+    bm_set(u->ibm, freeInode); // set the bit (inode is now allocated)
+    return freeInode; // return the inode number
 }
 
 int inode_setsize(struct inode *inode, int new_size)
 {
-	M_REQUIRE_NON_NULL(inode);
-	if(new_size < 0) // invalid new size
-	{
-		return ERR_NOMEM; // return error code
-	}
-	uint8_t		i_size0 = (new_size >> 16) & 0xFF; // extract 8 most significant bits
-	uint16_t	i_size1 = (new_size & 0xFFFF); // extract 16 least significant bits
-	inode->i_size1 = i_size1; // set size1
-	inode->i_size0 = i_size0; // set size0
-	return 0;
+    M_REQUIRE_NON_NULL(inode);
+    if(new_size < 0) { // invalid new size
+        return ERR_NOMEM; // return error code
+    }
+    uint8_t		i_size0 = (new_size >> 16) & 0xFF; // extract 8 most significant bits
+    uint16_t	i_size1 = (new_size & 0xFFFF); // extract 16 least significant bits
+    inode->i_size1 = i_size1; // set size1
+    inode->i_size0 = i_size0; // set size0
+    return 0;
 }

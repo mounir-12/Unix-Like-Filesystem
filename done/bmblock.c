@@ -40,7 +40,7 @@ int bm_get(struct bmblock_array *bmblock_array, uint64_t x)
     uint64_t bits = bmblock_array->bm[index]; // bits where bit x is contained
     size_t position = (x - bmblock_array->min) % BITS_PER_VECTOR; // position of x whitin bits
     int bit = ((UINT64_C(1) << position) & bits) >> position; // extract the bit
-    
+
     return bit;
 }
 
@@ -74,32 +74,27 @@ int bm_find_next(struct bmblock_array *bmblock_array)
 {
     M_REQUIRE_NON_NULL(bmblock_array);
 
-	uint64_t bits = UINT64_C(-1);
-	
-	while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length) // loop while 64 bits bloc not found
-	{
-		bits = bmblock_array->bm[bmblock_array->cursor]; // read bits pointed by cursor
-		if(bits == UINT64_C(-1)) // bits are all ones
-		{
-			bmblock_array->cursor += 1; // next 64 bits bloc
-		}
-	}
-	
-	if(bmblock_array->cursor == bmblock_array->length) // no free element (all ones)
-	{
-		return ERR_BITMAP_FULL;
-	}
-	uint64_t x = bmblock_array->cursor * BITS_PER_VECTOR + bmblock_array->min; // first element in the found bloc of 64 bits
-	int bit = bm_get(bmblock_array, x); // get corresponding bit
-	while(bit != 0) // if not unallocated
-	{
-		if(bit < 0) // if not in range [min;max]
-		{
-			return ERR_BITMAP_FULL; // then bitmap is full
-		}
-		x++; // otherwise next element
-		bit = bm_get(bmblock_array, x); // get corresponding bit
-	}
+    uint64_t bits = UINT64_C(-1);
+
+    while(bits == UINT64_C(-1) && bmblock_array->cursor < bmblock_array->length) { // loop while 64 bits bloc not found
+        bits = bmblock_array->bm[bmblock_array->cursor]; // read bits pointed by cursor
+        if(bits == UINT64_C(-1)) { // bits are all ones
+            bmblock_array->cursor += 1; // next 64 bits bloc
+        }
+    }
+
+    if(bmblock_array->cursor == bmblock_array->length) { // no free element (all ones)
+        return ERR_BITMAP_FULL;
+    }
+    uint64_t x = bmblock_array->cursor * BITS_PER_VECTOR + bmblock_array->min; // first element in the found bloc of 64 bits
+    int bit = bm_get(bmblock_array, x); // get corresponding bit
+    while(bit != 0) { // if not unallocated
+        if(bit < 0) { // if not in range [min;max]
+            return ERR_BITMAP_FULL; // then bitmap is full
+        }
+        x++; // otherwise next element
+        bit = bm_get(bmblock_array, x); // get corresponding bit
+    }
     return x; // return first x with bit = 0
 }
 
@@ -109,9 +104,9 @@ void bm_print(struct bmblock_array *bmblock_array)
     if(bmblock_array == NULL) {
         printf("NULL ptr\n");
     } else {
-		uint64_t min = bmblock_array->min; // min value
-		uint64_t max = bmblock_array->max; // max value
-        
+        uint64_t min = bmblock_array->min; // min value
+        uint64_t max = bmblock_array->max; // max value
+
         printf("length: %lu\n",bmblock_array->length);
         printf("min: %lu\n",min);
         printf("max: %lu\n",max);
@@ -119,13 +114,13 @@ void bm_print(struct bmblock_array *bmblock_array)
         printf("content:\n");
         for(uint64_t i = 0; i < bmblock_array->length; i++) { //iterate on 64 bits blocs
             printf("%lu:",i);
-            
+
             for(int j = 0; j < BITS_PER_VECTOR; j++) { //iterate the blocs bits
-				uint64_t x = i*BITS_PER_VECTOR + j + min; // element number
-				int bit = bm_get(bmblock_array, x);
+                uint64_t x = i*BITS_PER_VECTOR + j + min; // element number
+                int bit = bm_get(bmblock_array, x);
                 printf("%s%u", (j % 8 == 0) ? " " : "", (bit < 0 ? 0: bit)); //get bit and print it, print 0 if bit is not within range
             }
-            
+
             printf("\n");
         }
     }

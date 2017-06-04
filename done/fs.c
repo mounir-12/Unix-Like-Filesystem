@@ -38,16 +38,16 @@ struct unix_filesystem fs;
  */
 static int fs_getattr(const char *path, struct stat *stbuf)
 {
-	M_REQUIRE_NON_NULL(path); // require non NULL argument
-	M_REQUIRE_NON_NULL(stbuf); // require non NULL argument
-	
-	memset(stbuf, 0, sizeof(struct stat)); // set all atributes of the struct to 0
+    M_REQUIRE_NON_NULL(path); // require non NULL argument
+    M_REQUIRE_NON_NULL(stbuf); // require non NULL argument
+
+    memset(stbuf, 0, sizeof(struct stat)); // set all atributes of the struct to 0
 
     int inr = direntv6_dirlookup(&fs, ROOT_INUMBER, path); // search inode number
     if(inr < 0) { // inode not found
         return inr; // return error code
     }
-    
+
     struct inode i;
     int error = inode_read(&fs, inr, &i); // read inode
     if(error) { // error found
@@ -62,13 +62,13 @@ static int fs_getattr(const char *path, struct stat *stbuf)
     stbuf->st_size = inode_getsize(&i);
     stbuf->st_blksize = 512; // size of a block is 512 bytes
     stbuf->st_blocks = inode_getsize(&i) / 512; // number of full blocks in the inode
-    
+
     if (i.i_mode & IFDIR) { // inode is a directory
         stbuf->st_mode = S_IFDIR | stbuf->st_mode;
     } else { // inode is a file
         stbuf->st_mode = S_IFREG | stbuf->st_mode;
     }
-    
+
     return 0;
 }
 
@@ -84,12 +84,12 @@ static int fs_getattr(const char *path, struct stat *stbuf)
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                       off_t offset, struct fuse_file_info *fi)
 {
-	M_REQUIRE_NON_NULL(path); // require non NULL argument
-	M_REQUIRE_NON_NULL(buf); // require non NULL argument
-	
-	(void) offset;
+    M_REQUIRE_NON_NULL(path); // require non NULL argument
+    M_REQUIRE_NON_NULL(buf); // require non NULL argument
+
+    (void) offset;
     (void) fi;
-    
+
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
@@ -97,7 +97,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     if(inr < 0) { // inode not found
         return inr; // propagate error code
     }
-    
+
     struct directory_reader d;
     int openingError = direntv6_opendir(&fs, inr, &d); // error occured while opening the directory
     if(openingError) { // propagate error
@@ -105,23 +105,21 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
     int read = 0;
-    
+
     do {
         char childName[DIRENT_MAXLEN+1]; // child Name
         uint16_t child_inr; // child inode number
-        
+
         read = direntv6_readdir(&d, childName, &child_inr); // read directory's children
-        if(read < 0){ // if error occured
-			return read;
-		}
-		else if(read == 0) // no child read
-		{
-			return 0;
-		}
-		
-		filler(buf, childName, NULL, 0); // copy child's name in the buffer
+        if(read < 0) { // if error occured
+            return read;
+        } else if(read == 0) { // no child read
+            return 0;
+        }
+
+        filler(buf, childName, NULL, 0); // copy child's name in the buffer
     } while(read == 1); // read until there are no more childrens left
-    
+
     return 0;
 }
 
@@ -138,18 +136,22 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
                    struct fuse_file_info *fi)
 {
     (void) fi;
-    
+
     int inr = direntv6_dirlookup(&fs, ROOT_INUMBER, path); // search inode number
     if(inr < 0) { // inode not found
         return 0; // return 0 to signal error (no byte read to buf)
     }
-    
+
     struct filev6 fv6;
     int error = filev6_open(&fs, inr, &fv6);
     if(error) { // error found
         return 0; // return 0 to signal error (no byte read to buf)
     }
-    
+
+    if(((fv6.i_node).i_mode & IALLOC) || ((fv6.i_node).i_mode & IFMT) == IFDIR) { // inode unallocated or inode of directory
+        return 0; // return 0 to signal error (no byte read to buf)
+    }
+
     error = filev6_lseek(&fv6, offset); // seek the given offset
     if(error) { // error found
         return 0; // return 0 to signal error (no byte read to buf)
@@ -158,21 +160,19 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
     size_t blocksToRead = size / SECTOR_SIZE; // in order to always read block by block
     size_t bytesToRead = blocksToRead * SECTOR_SIZE; // number of bytes to read
     unsigned char data[bytesToRead]; // data of the file
-	
-	size_t dataOffset = 0; // offset for data, also total number of read bytes
-	int read = 1; // number of read bytes in one read
 
-    while(read > 0 && dataOffset < bytesToRead) // loop while can still read and didn't read max size
-    {
-		read = filev6_readblock(&fv6, &(data[dataOffset])); // read block and put it in data at dataOffset
-        if(read < 0) // error occured while reading block
-        {
-			return 0; // return 0 to signal error (no byte read to buf)
-		}
-		dataOffset += read; // otherwise, increment offset by the number of bytes read
+    size_t dataOffset = 0; // offset for data, also total number of read bytes
+    int read = 1; // number of read bytes in one read
+
+    while(read > 0 && dataOffset < bytesToRead) { // loop while can still read and didn't read max size
+        read = filev6_readblock(&fv6, &(data[dataOffset])); // read block and put it in data at dataOffset
+        if(read < 0) { // error occured while reading block
+            return 0; // return 0 to signal error (no byte read to buf)
+        }
+        dataOffset += read; // otherwise, increment offset by the number of bytes read
 
     }
-    
+
     memcpy(buf, data, dataOffset); // copy read bytes from data to buf
     return dataOffset; // return number of read bytes
 }
@@ -184,7 +184,8 @@ static int arg_parse(void *data, const char *filename, int key, struct fuse_args
     if (key == FUSE_OPT_KEY_NONOPT && fs.f == NULL && filename != NULL) {
         int error = mountv6(filename,&fs);
         if(error) {
-			printf("ERROR FS: %s\n", ERR_MESSAGES[error - ERR_FIRST]); fflush(stdout);
+            printf("ERROR FS: %s\n", ERR_MESSAGES[error - ERR_FIRST]);
+            fflush(stdout);
             fs.f = NULL;
             exit(1);
         }
@@ -201,8 +202,8 @@ static struct fuse_operations available_ops = {
 
 int main(int argc, char *argv[])
 {
-	fs.f = NULL; // initial value of f
-	// main
+    fs.f = NULL; // initial value of f
+    // main
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv); // extract arguments
     int ret = fuse_opt_parse(&args, NULL, NULL, arg_parse); // mount the file system
     if (ret == 0) {

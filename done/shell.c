@@ -441,13 +441,13 @@ int do_add(char** args)
     uint16_t FIL = IALLOC; // allocated file
     int error = direntv6_create(&u, args[1], FIL); // create a new file in filesystem
     if(error) { // error occured while creating file
-		fclose(file);
+        fclose(file);
         return error; // propagate error
     }
     fseek(file, 0, SEEK_END); // go to end of file
     int size = ftell(file); // get file size
     if(size < 0) { // error occured
-		fclose(file);
+        fclose(file);
         return ERR_IO; // propagate error
     }
     uint8_t data[size]; // buffer to contain the file data
@@ -457,12 +457,12 @@ int do_add(char** args)
     struct filev6 newFile; // filev6 for the new file
     error = filev6_open(&u, fileInr, &newFile); // open filev6
     if(error) { // error occured
-		fclose(file);
+        fclose(file);
         return error; // propagate error
     }
     error = filev6_writebytes(&u, &newFile, data, size); // write data to file
     if(error) { // error occured
-		fclose(file);
+        fclose(file);
         return error; // propagate error
     }
     fclose(file);

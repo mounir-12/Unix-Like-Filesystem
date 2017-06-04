@@ -8,8 +8,7 @@
 
 int test(struct unix_filesystem *u)
 {
-	bm_print(u->fbm);
-	bm_print(u->ibm);
-	return 0;
+    bm_print(u->fbm);
+    bm_print(u->ibm);
+    return 0;
 }
-
