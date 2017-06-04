@@ -148,7 +148,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
         return 0; // return 0 to signal error (no byte read to buf)
     }
 
-    if(((fv6.i_node).i_mode & IALLOC) || ((fv6.i_node).i_mode & IFMT) == IFDIR) { // inode unallocated or inode of directory
+    if(((fv6.i_node).i_mode & IALLOC) || ((fv6.i_node).i_mode & IFDIR)) { // inode unallocated or inode of directory
         return 0; // return 0 to signal error (no byte read to buf)
     }
 

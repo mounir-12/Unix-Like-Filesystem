@@ -36,7 +36,7 @@ int inode_scan_print(const struct unix_filesystem *u)
                     printf("(%s) ", SHORT_FIL_NAME);
                 }
 
-                printf("len %" PRIu32"\n", inode_getsize(&inodes[i])); // call inode_getsize with pointer to current inode
+                printf("len %4" PRIu32"\n", inode_getsize(&inodes[i])); // call inode_getsize with pointer to current inode
                 fflush(stdout);
             }
         }
