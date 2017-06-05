@@ -1,5 +1,5 @@
 1.Commentaires:
-	Pas de commentaire particulier.
+	Nous avons trouvé une certaine difficulté à comprendre pleinement la description du projet au cours des premières semaines, 		surtout en raison du fait que nous avons pas traités les systèmes d'exploitation en cour. à par ça, nous n'avons pas de 	commentaires particuliers.
 
 2.Réponses aux questions:
 -Jusqu’où avez-vous été ? qu’est-ce que vous avez fait/pas fait ?
