@@ -1,0 +1,85 @@
+unixv6fs.h:
+19d18
+<  * @author original UNIX v6 team + Mendel Rosenblum (Stanford) + Edouard Bugnion
+202,204c201,209
+<     /* TODO WEEK 04:
+<      * la première chose à faire est de définir cette structure.
+<      */
+---
+> 	uint16_t	i_mode;			/* contains different informations on the inode */
+> 	uint8_t		i_nlink;		/* not used */
+> 	uint8_t		i_uid;			/* file proprietary identifier (not used) */
+> 	uint8_t		i_gid;			/* file group identifier (not used) */
+> 	uint8_t		i_size0;		/* represents the most significant bits of the size of the file */
+> 	uint16_t	i_size1;		/* represents the least significant bits of the size of the file */
+> 	uint16_t	i_addr[ADDR_SMALL_LENGTH];		/* contains the sector number where the file content is stored */
+> 	uint16_t	i_atime[2];		/* last access date (not used) */
+> 	uint16_t	i_mtime[2];		/* last modification date (not used) */
+
+
+mount.h:
+7d6
+<  * @author Edouard Bugnion
+
+
+error.h:
+7d6
+<  * @author Edouard Bugnion
+
+
+inode.h:
+7d6
+<  * @author Edouard Bugnion
+
+
+sha.h:
+7d6
+<  * @author Aurélien Soccard
+
+
+test-core.c:
+5d4
+<  * @author Aurélien Soccard & Jean-Cédric Chappelier
+
+
+filev6.h:
+7d6
+<  * @author Edouard Bugnion
+54c53
+<  * @param mode the mode of the file
+---
+>  * @param mode the new offset of the file
+
+
+sector.h:
+7d6
+<  * @author Edouard Bugnion
+
+
+direntv6.h:
+7d6
+<  * @author Edouard Bugnion
+21,24c20,23
+<     /* TODO WEEK 06:
+<      * définir cette structure.
+<      */
+<     int unused; // so that it can compile before WEEK 6
+---
+>     struct filev6 fv6; // represents the directory to read (current directory)
+>     struct direntv6 dirs[DIRENTRIES_PER_SECTOR]; // array content of the current directory's children (a child can be a file or a directory)
+>     int cur; // current child (which is the last visited child)
+>     int last; // last child read from disk
+
+
+bmblock.h:
+7d6
+<  * @author Edouard Bugnion
+19c18,22
+<     int unused; // so that it can compile before WEEK 9
+---
+>     size_t length; // length of bm array
+>     uint64_t cursor; // current 64 bits block
+>     uint64_t min; // min element
+>     uint64_t max; // max element
+>     uint64_t bm[1]; // bits array
+
